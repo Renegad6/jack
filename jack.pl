@@ -9,18 +9,19 @@ jack :-
 
 elige_guarida :-
         random(1,200,G),
-        assert(guarida(G))
+        assertz(guarida(G))
         write(" .... Ya tengo mi guarida... bwahahahaha...."),nl.
 
 otra_noche_mas :-
         jack_libre,
         queda_por_matar,
-        noche(N),retract(noche(_)),N is N+1,assert(noche(N)).
+        noche(N),retract(noche(_)),N is N+1,assertz(noche(N)).
         retract(pe(_,_)),
         cuantas_pes(N,P),
         coloca_pes_una_a_una(P).
-        write(" .... ya he colocado las pe's, comienza noche "),write(N),write(",bwahahahaha...."),nl,
-        aun_queda_por_matar(N).
+        retract(linternas_que_quedan(_)),linternas_por_noche(N,LI),assertz(linternas_que_quedan(LI)),
+        retract(carromatos_que_quedan(_)),carromatos_por_noche(N,CARR),assertz(carromatos_que_quedan(CARR)),
+        write(" .... ya he colocado las pe's, comienza noche "),write(N),write(",bwahahahaha...."),nl.
 
 mata_una :-
         jack_mata_una(C),
@@ -40,10 +41,13 @@ mueve_jack :-
         jack_libre,
         queda_por_matar,
         jack_no_en_guarida,
-        jack_se_mueve_entre_la_niebla(C),
-        assert(he_estado(C)),
-        avisa_si_en_guarida.
-mueve_jack :-
+        jack_en(C),
+        guarida(G),
+        hay_caminos(C,G,L),
+        mejor_camino(L,posicion_del_mapa(CI,CD,LI,CARR),
+        assertz(jack_ha_estado(C)),
+        assertz(jack_ha_estado(CI)),
+        anuncia_movimiento(LI,CARR),
         avisa_si_en_guarida.
 
 donde_poli(P) :-
@@ -65,7 +69,7 @@ arresto(C) :-
 pista(C) :-
         jack_libre,
         queda_por_matar,
-        he_estado(C),
+        jack_ha_estado(C),
         write(".... ssiiii!!!!!"),nl.
 pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
 
@@ -75,11 +79,11 @@ init:-
         retract(guarida(_)),
         retract(poli(_,_,_)),
         retract(crime_scene(_)),
-        assert(jack_libre),
-        assert(queda_por_matar),
+        assertz(jack_libre),
+        assertz(queda_por_matar),
         retract(noche(_)),
-        retract(he_estado(_)),
-        assert(noche(0)).
+        retract(jack_ha_estado(_)),
+        assertz(noche(0)).
 
 coloca_pes_una_a_una (P) :-
         (P > 0),
@@ -92,7 +96,7 @@ coloca_pe :-
         pe_no_ha_sido_colocada(P),
         salida_pe(P,C),
         not_crime_scene(C),
-        assert(pe(P,C)).
+        assertz(pe(P,C)).
         
 not_crime_scene(C) :- 
         crime_scene(C),fail.
@@ -107,7 +111,7 @@ jack_mata_una(C) :-
         pe(P,C),retract(pe(P,C)),
 
 jack_en(C) :-
-        retract(posicion_jack(_)),assert(posicion_jack(C)).
+        retract(posicion_jack(_)),assertz(posicion_jack(C)).
 
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
@@ -120,18 +124,17 @@ jack_en_guarida :- posicion_jack(C),guarida(C).
 
 poli_esta_en(P,0,0):-.
 poli_esta_en(P,A,B):-
-        assert(poli(P,A,B)),
+        assertz(poli(P,A,B)),
         donde_poli(P).
         
 avisa_si_en_guarida :-
         jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl.
 avisa_si_en_guarida :-.
 
-aun_queda_por_matar(4) :-
-        write("... ganeeeeeeeeeeeee.... bwahahahaha"),nl,
-        retract(aun_queda_por_matar).
-aun_queda_por_matar(_):-.
-
+anuncia_movimiento(1,_):-
+        write(".. voy a usar ... una linterna!! me meti por una callejon!! bwahahahaha"),nl.
+anuncia_movimiento(_,1):-
+        write(".. voy a usar ... un carromato!! voy a toda pastillaao!! bwahahahaha"),nl.
 banner:-
         write("                             ud$$$**$$$$$$$bc.                          "),nl,
         write("                          u@**%        4$$$$$$$Nu                       "),nl,
@@ -174,6 +177,36 @@ banner:-
         write("              %$F $$$$$%                              ^b  ^$$$$b$       "),nl,
         write("               %$W$$$$%                                %b@$$$$%         "),nl,
         write("                                                        ^$$$*           "),nl.
+
+/* movimiento */
+
+camino(mapa(A,M,L,C),mapa(B,M2,L,C),[mapa(A,M,L,C),mapa(B,M2,L,C)]):-
+        (M>0),jack_camina(A,B),(M2 is (M-1)).
+camino(mapa(A,M,L,C),mapa(B,M2,L,C),[mapa(A,M,L,C)|RESTO]):-
+        (M>0),jack_camina(A,W),(M2 is (M-1)),
+        camino(mapa(W,M2,L,C),mapa(B,_,_,_),RESTO).
+
+jack_camina(A,B):-
+        conectados(A,B),
+        no_hay_polis(A,B).
+jack_pasa_por_callejon(A,B):-
+        callejon(A,B).
+jack_pasa_por_callejon(A,B):-
+        callejon(B,A).
+jack_va_en_carromato(A,B,C):-
+        conectados(A,B),no_hay_polis(A,B).
+        conectados(B,C),no_hay_polis(B,C).
+
+conectados(A,B):-
+        conexion(A,B).
+conectados(A,B):-
+        conexion(B,A).
+
+no_hay_polis(A,B):-
+        poli(_,A,B),fail.
+no_hay_polis(A,B):-
+        poli(_,B,A),fail.
+no_hay_polis(_,_):-.
 
 /* Configuracion del juego */
 
