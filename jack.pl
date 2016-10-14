@@ -180,8 +180,29 @@ banner:-
 
 /* movimiento */
 
-camino(mapa(A,M,L,C),mapa(B,M2,L,C),[mapa(A,M,L,C),mapa(B,M2,L,C)]):-
+hay_caminos(P,G,LI,CA,MEJ_CAM):-
+        camino(mapa(P,_,15,LI,CA),mapa(G,_,_,_,_),CAM),
+        elige_mejor_camino(MEJ_CAM,CAM,MEJ_CAM2),
+        (MEJ_CAM is MEJ_CAM2).
+
+elige_mejor_camino(C1,C2,C3):-
+        length(C1,L1),
+        length(C2,L2),
+        (L1=<L2),
+        (C3 is C1).
+elige_mejor_camino(C1,C2,C3):-
+        length(C1,L1),
+        length(C2,L2),
+        (L1>L2),
+        (C3 is C2).
+
+camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA)]):-
         (M>0),jack_camina(A,B),(M2 is (M-1)).
+camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA)]):-
+        (M>0),jack_pasa_por_callejon(A,B),(M2 is (M-1)),(LI2 is (LI-1))
+camino(mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2),[mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2)]):-
+        (M>1),jack_va_en_carromato(A,B,C),(M2 is (M-2)),(CA2 is (CA-1))
+
 camino(mapa(A,M,L,C),mapa(B,M2,L,C),[mapa(A,M,L,C)|RESTO]):-
         (M>0),jack_camina(A,W),(M2 is (M-1)),
         camino(mapa(W,M2,L,C),mapa(B,_,_,_),RESTO).
@@ -223,5 +244,3 @@ salida_pe(3,134).
 salida_pe(4,134).
 salida_pe(5,134).
 salida_pe(7,134).
-
-
