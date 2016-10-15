@@ -9,16 +9,16 @@ jack :-
 
 elige_guarida :-
         random(1,200,G),
-        assertz(guarida(G))
+        assertz(guarida(G)),
         write(" .... Ya tengo mi guarida... bwahahahaha...."),nl.
 
 otra_noche_mas :-
         jack_libre,
         queda_por_matar,
-        noche(N),retract(noche(_)),N is N+1,assertz(noche(N)).
+        noche(N),retract(noche(_)),(N is N+1),assertz(noche(N)),
         retract(pe(_,_)),
         cuantas_pes(N,P),
-        coloca_pes_una_a_una(P).
+        coloca_pes_una_a_una(P),
         retract(linternas_que_quedan(_)),linternas_por_noche(N,LI),assertz(linternas_que_quedan(LI)),
         retract(carromatos_que_quedan(_)),carromatos_por_noche(N,CARR),assertz(carromatos_que_quedan(CARR)),
         write(" .... ya he colocado las pe's, comienza noche "),write(N),write(",bwahahahaha...."),nl.
@@ -100,15 +100,15 @@ coloca_pe :-
         
 not_crime_scene(C) :- 
         crime_scene(C),fail.
-not_crime_scene(C).
+not_crime_scene(_):-.
 
 pe_no_ha_sido_colocada(P) :-
         pe(P,_),fail.
-pe_no_ha_sido_colocada(P).
+pe_no_ha_sido_colocada(P):-.
 
 jack_mata_una(C) :-
         random(1,7,P),
-        pe(P,C),retract(pe(P,C)),
+        pe(P,C),retract(pe(P,C)).
 
 jack_en(C) :-
         retract(posicion_jack(_)),assertz(posicion_jack(C)).
@@ -116,8 +116,8 @@ jack_en(C) :-
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
         decide(X,C,CC,RC).
-decide(0,C,_,C).
-decide(1,_,CC,CC).
+decide(0,C,_,C):-.
+decide(1,_,CC,CC):-.
 
 jack_no_en_guarida :- posicion_jack(C),guarida(G),C \== G.
 jack_en_guarida :- posicion_jack(C),guarida(C).
@@ -199,35 +199,35 @@ elige_mejor_camino(C1,C2,C3):-
 camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA)]):-
         (M>0),jack_camina(A,B),(M2 is (M-1)).
 camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA)]):-
-        (M>0),jack_pasa_por_callejon(A,B),(M2 is (M-1)),(LI2 is (LI-1))
+        (M>0),jack_pasa_por_callejon(A,B),(M2 is (M-1)),(LI2 is (LI-1)).
 camino(mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2),[mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2)]):-
-        (M>1),jack_va_en_carromato(A,B,C),(M2 is (M-2)),(CA2 is (CA-1))
+        (M>1),jack_va_en_carromato(A,B,C),(M2 is (M-2)),(CA2 is (CA-1)).
 
-camino(mapa(A,M,L,C),mapa(B,M2,L,C),[mapa(A,M,L,C)|RESTO]):-
+camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA)|RESTO]):-
         (M>0),jack_camina(A,W),(M2 is (M-1)),
-        camino(mapa(W,M2,L,C),mapa(B,_,_,_),RESTO).
+        camino(mapa(W,A,M2,LI,CA),mapa(B,_,_,_,_),RESTO).
+camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA)|RESTO]):-
+        (M>0),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
+        camino(mapa(W,A,M2,LI2,CA),mapa(B,_,_,_,_),RESTO).
+camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA),mapa(W,A,M2,LI,CA2)|RESTO]):-
+        (M>1),jack_va_en_carromato(A,W,W2),(M2 is (M-1)),(M3 is (M-2)),(CA2 is (CA-1)),
+        camino(mapa(W2,W,M3,LI,CA2),mapa(B,_,_,_,_),RESTO).
 
 jack_camina(A,B):-
         conectados(A,B),
-        no_hay_polis(A,B).
+        \+poli(_,A,B).
 jack_pasa_por_callejon(A,B):-
         callejon(A,B).
 jack_pasa_por_callejon(A,B):-
         callejon(B,A).
 jack_va_en_carromato(A,B,C):-
-        conectados(A,B),no_hay_polis(A,B).
-        conectados(B,C),no_hay_polis(B,C).
+        conectados(A,B),\+poli(_,A,B),
+        conectados(B,C),\+poli(_,B,C).
 
 conectados(A,B):-
         conexion(A,B).
 conectados(A,B):-
         conexion(B,A).
-
-no_hay_polis(A,B):-
-        poli(_,A,B),fail.
-no_hay_polis(A,B):-
-        poli(_,B,A),fail.
-no_hay_polis(_,_):-.
 
 /* Configuracion del juego */
 
@@ -244,3 +244,11 @@ salida_pe(3,134).
 salida_pe(4,134).
 salida_pe(5,134).
 salida_pe(7,134).
+
+/* descripcion del mapa */
+conexion(1,2).
+conexion(2,3).
+conexion(2,4).
+callejon(2,4).
+callejon(3,4).
+poli(rojo,2,4).
