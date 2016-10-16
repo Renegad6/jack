@@ -44,7 +44,7 @@ mueve_jack :-
         jack_en(C),
         guarida(G),
         hay_caminos(C,G,L),
-        mejor_camino(L,posicion_del_mapa(CI,CD,LI,CARR),
+        mejor_camino(L,posicion_del_etapa(CI,CD,LI,CARR),
         assertz(jack_ha_estado(C)),
         assertz(jack_ha_estado(CI)),
         anuncia_movimiento(LI,CARR),
@@ -181,7 +181,7 @@ banner:-
 /* movimiento */
 
 hay_caminos(P,G,LI,CA,MEJ_CAM):-
-        camino(mapa(P,_,15,LI,CA),mapa(G,_,_,_,_),CAM),
+        camino(etapa(P,_,15,LI,CA),etapa(G,_,_,_,_),_,CAM),
         elige_mejor_camino(MEJ_CAM,CAM,MEJ_CAM2),
         (MEJ_CAM is MEJ_CAM2).
 
@@ -196,22 +196,24 @@ elige_mejor_camino(C1,C2,C3):-
         (L1>L2),
         (C3 is C2).
 
-camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI,CA)]):-
+path(A,B,[A,B]):-
+        conexion(A,B).
+camino(etapa(A,_,M,LI,CA),etapa(B,A,M2,LI,CA),[A,B],[etapa(A,_,M,LI,CA),etapa(B,A,M2,LI,CA)]):-
         (M>0),jack_camina(A,B),(M2 is (M-1)).
-camino(mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA),[mapa(A,_,M,LI,CA),mapa(B,A,M2,LI2,CA)]):-
+camino(etapa(A,_,M,LI,CA),etapa(B,A,M2,LI2,CA),[A,B],[etapa(A,_,M,LI,CA),etapa(B,A,M2,LI2,CA)]):-
         (M>0),jack_pasa_por_callejon(A,B),(M2 is (M-1)),(LI2 is (LI-1)).
-camino(mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2),[mapa(A,_,M,LI,CA),mapa(C,B,M2,LI,CA2)]):-
+camino(etapa(A,_,M,LI,CA),etapa(C,B,M2,LI,CA2),[A,B],[etapa(A,_,M,LI,CA),etapa(C,B,M2,LI,CA2)]):-
         (M>1),jack_va_en_carromato(A,B,C),(M2 is (M-2)),(CA2 is (CA-1)).
 
-camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA)|RESTO]):-
-        (M>0),jack_camina(A,W),(M2 is (M-1)),
-        camino(mapa(W,A,M2,LI,CA),mapa(B,_,_,_,_),RESTO).
-camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA)|RESTO]):-
-        (M>0),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
-        camino(mapa(W,A,M2,LI2,CA),mapa(B,_,_,_,_),RESTO).
-camino(mapa(A,_,M,LI,CA),mapa(B,_,_,_,_),[mapa(A,_,M,LI,CA),mapa(W,A,M2,LI,CA2)|RESTO]):-
-        (M>1),jack_va_en_carromato(A,W,W2),(M2 is (M-1)),(M3 is (M-2)),(CA2 is (CA-1)),
-        camino(mapa(W2,W,M3,LI,CA2),mapa(B,_,_,_,_),RESTO).
+camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[W|FINAL],[etapa(A,_,M,LI,CA)|RESTO]):-
+        (M>0),(\+member(W,FINAL)),jack_camina(A,W),(M2 is (M-1)),
+        camino(etapa(W,A,M2,LI,CA),etapa(B,_,_,_,_),_,RESTO).
+camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[W|FINAL],[etapa(A,_,M,LI,CA)|RESTO]):-
+        (M>0),(\+member(W,FINAL)),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
+        camino(etapa(W,A,M2,LI2,CA),etapa(B,_,_,_,_),_,RESTO).
+camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[[W|W2]|FINAL],[etapa(A,_,M,LI,CA),etapa(W,A,M2,LI,CA2)|RESTO]):-
+        (M>1),(\+member(W,FINAL)),(\+member(W2,FINAL)),jack_va_en_carromato(A,W,W2),(M2 is (M-1)),(M3 is (M-2)),(CA2 is (CA-1)),
+        camino(etapa(W2,W,M3,LI,CA2),etapa(B,_,_,_,_),_,RESTO).
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -245,7 +247,7 @@ salida_pe(4,134).
 salida_pe(5,134).
 salida_pe(7,134).
 
-/* descripcion del mapa */
+/* descripcion del etapa */
 conexion(1,2).
 conexion(2,3).
 conexion(2,4).
