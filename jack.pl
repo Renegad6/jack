@@ -196,24 +196,23 @@ elige_mejor_camino(C1,C2,C3):-
         (L1>L2),
         (C3 is C2).
 
-path(A,B,[A,B]):-
-        conexion(A,B).
-camino(etapa(A,_,M,LI,CA),etapa(B,A,M2,LI,CA),[A,B],[etapa(A,_,M,LI,CA),etapa(B,A,M2,LI,CA)]):-
-        (M>0),jack_camina(A,B),(M2 is (M-1)).
-camino(etapa(A,_,M,LI,CA),etapa(B,A,M2,LI2,CA),[A,B],[etapa(A,_,M,LI,CA),etapa(B,A,M2,LI2,CA)]):-
-        (M>0),jack_pasa_por_callejon(A,B),(M2 is (M-1)),(LI2 is (LI-1)).
-camino(etapa(A,_,M,LI,CA),etapa(C,B,M2,LI,CA2),[A,B],[etapa(A,_,M,LI,CA),etapa(C,B,M2,LI,CA2)]):-
-        (M>1),jack_va_en_carromato(A,B,C),(M2 is (M-2)),(CA2 is (CA-1)).
+camino(A,B,M,_,_,[etapa(B,false,false)]:-
+        (M>0),jack_camina(A,B).
+camino(A,B,M,LI,_,[etapa(B,true,false)]:-
+        (M>0),(LI>0),jack_pasa_por_callejon(A,B).
+camino(A,B,M,_,CA,[etapa(W,false,true),etapa(B,false,true)]:-
+        (M>1),(CA>0),jack_va_en_carromato(A,W,B).
 
-camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[W|FINAL],[etapa(A,_,M,LI,CA)|RESTO]):-
-        (M>0),(\+member(W,FINAL)),jack_camina(A,W),(M2 is (M-1)),
-        camino(etapa(W,A,M2,LI,CA),etapa(B,_,_,_,_),_,RESTO).
-camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[W|FINAL],[etapa(A,_,M,LI,CA)|RESTO]):-
-        (M>0),(\+member(W,FINAL)),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
-        camino(etapa(W,A,M2,LI2,CA),etapa(B,_,_,_,_),_,RESTO).
-camino(etapa(A,_,M,LI,CA),etapa(B,_,_,_,_),[[W|W2]|FINAL],[etapa(A,_,M,LI,CA),etapa(W,A,M2,LI,CA2)|RESTO]):-
-        (M>1),(\+member(W,FINAL)),(\+member(W2,FINAL)),jack_va_en_carromato(A,W,W2),(M2 is (M-1)),(M3 is (M-2)),(CA2 is (CA-1)),
-        camino(etapa(W2,W,M3,LI,CA2),etapa(B,_,_,_,_),_,RESTO).
+camino(A,B,M,LI,CA,[etapa(W,false,false)|RESTO]:-
+        (M>0),jack_camina(A,W),(M2 is (M-1),
+        camino(W,B,M2,LI,CA,RESTO).
+camino(A,B,M,LI,CA,[etapa(W,true,false)|RESTO]:-
+        (M>0),(LI>0),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
+        camino(W,B,M2,LI2,CA,RESTO).
+camino(A,B,M,LI,CA,[etapa(W,false,true),etapa(W2,false,true)|RESTO]:-
+        (M>1),(CA>0),jack_va_en_carromato(A,W,W2),(M2 is (M-2)),(CA2 is (CA-1)),
+        camino(W2,B,M2,LI,CA2,RESTO).
+
 
 jack_camina(A,B):-
         conectados(A,B),
