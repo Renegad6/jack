@@ -40,15 +40,7 @@ mata_dos :-
 mueve_jack :-
         jack_libre,
         queda_por_matar,
-        jack_no_en_guarida,
-        jack_en(C),
-        guarida(G),
-        hay_caminos(C,G,L),
-        mejor_camino(L,posicion_del_etapa(CI,CD,LI,CARR),
-        assertz(jack_ha_estado(C)),
-        assertz(jack_ha_estado(CI)),
-        anuncia_movimiento(LI,CARR),
-        avisa_si_en_guarida.
+        jack_no_en_guarida.
 
 donde_poli(P) :-
         jack_libre,
@@ -75,7 +67,7 @@ pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
 
 
 /* Funciones auxiliares .*/
-init:-
+init :-
         retract(guarida(_)),
         retract(poli(_,_,_)),
         retract(crime_scene(_)),
@@ -85,7 +77,7 @@ init:-
         retract(jack_ha_estado(_)),
         assertz(noche(0)).
 
-coloca_pes_una_a_una (P) :-
+coloca_pes_una_a_una(P) :-
         (P > 0),
         coloca_pe,
         coloca_pes_una_a_una(P-1).
@@ -100,11 +92,11 @@ coloca_pe :-
         
 not_crime_scene(C) :- 
         crime_scene(C),fail.
-not_crime_scene(_):-.
+not_crime_scene(_).
 
 pe_no_ha_sido_colocada(P) :-
         pe(P,_),fail.
-pe_no_ha_sido_colocada(P):-.
+pe_no_ha_sido_colocada(P).
 
 jack_mata_una(C) :-
         random(1,7,P),
@@ -116,8 +108,8 @@ jack_en(C) :-
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
         decide(X,C,CC,RC).
-decide(0,C,_,C):-.
-decide(1,_,CC,CC):-.
+decide(0,C,_,C).
+decide(1,_,CC,CC).
 
 jack_no_en_guarida :- posicion_jack(C),guarida(G),C \== G.
 jack_en_guarida :- posicion_jack(C),guarida(C).
@@ -129,7 +121,7 @@ poli_esta_en(P,A,B):-
         
 avisa_si_en_guarida :-
         jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl.
-avisa_si_en_guarida :-.
+avisa_si_en_guarida.
 
 anuncia_movimiento(1,_):-
         write(".. voy a usar ... una linterna!! me meti por una callejon!! bwahahahaha"),nl.
@@ -196,23 +188,12 @@ elige_mejor_camino(C1,C2,C3):-
         (L1>L2),
         (C3 is C2).
 
-camino(A,B,M,_,_,[etapa(B,false,false)]:-
-        (M>0),jack_camina(A,B).
-camino(A,B,M,LI,_,[etapa(B,true,false)]:-
-        (M>0),(LI>0),jack_pasa_por_callejon(A,B).
-camino(A,B,M,_,CA,[etapa(W,false,true),etapa(B,false,true)]:-
-        (M>1),(CA>0),jack_va_en_carromato(A,W,B).
+camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
+        M>0,jack_camina(A,B).
 
-camino(A,B,M,LI,CA,[etapa(W,false,false)|RESTO]:-
-        (M>0),jack_camina(A,W),(M2 is (M-1),
-        camino(W,B,M2,LI,CA,RESTO).
-camino(A,B,M,LI,CA,[etapa(W,true,false)|RESTO]:-
-        (M>0),(LI>0),jack_pasa_por_callejon(A,W),(M2 is (M-1)),(LI2 is (LI-1)),
-        camino(W,B,M2,LI2,CA,RESTO).
-camino(A,B,M,LI,CA,[etapa(W,false,true),etapa(W2,false,true)|RESTO]:-
-        (M>1),(CA>0),jack_va_en_carromato(A,W,W2),(M2 is (M-2)),(CA2 is (CA-1)),
-        camino(W2,B,M2,LI,CA2,RESTO).
-
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),M2 is (M-1),
+        camino(W,B,M2,LI,CA,[W|VIS],T).
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -249,7 +230,7 @@ salida_pe(7,134).
 /* descripcion del etapa */
 conexion(1,2).
 conexion(2,3).
-conexion(2,4).
-callejon(2,4).
-callejon(3,4).
-poli(rojo,2,4).
+conexion(3,4).
+conexion(4,5).
+poli(rojo,0,0).
+callejon(0,0).
