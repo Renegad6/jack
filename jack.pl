@@ -190,9 +190,14 @@ elige_mejor_camino(C1,C2,C3):-
 
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
+camino(A,B,M,_,_,_,[etapa(B,yes,no)]):-
+        M>0,jack_pasa_por_callejon(A,B).
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),M2 is (M-1),
+        camino(W,B,M2,LI,CA,[W|VIS],T).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
+        M>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),M2 is (M-1),
         camino(W,B,M2,LI,CA,[W|VIS],T).
 
 jack_camina(A,B):-
@@ -232,5 +237,6 @@ conexion(1,2).
 conexion(2,3).
 conexion(3,4).
 conexion(4,5).
-poli(rojo,0,0).
-callejon(0,0).
+poli(rojo,2,4).
+callejon(2,4).
+callejon(3,4).
