@@ -188,17 +188,22 @@ elige_mejor_camino(C1,C2,C3):-
         (L1>L2),
         (C3 is C2).
 
-camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
+camino(A,B,M,_,_,[A],[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
-camino(A,B,M,_,_,_,[etapa(B,yes,no)]):-
+camino(A,B,M,_,_,[A],[etapa(B,yes,no)]):-
         M>0,jack_pasa_por_callejon(A,B).
+camino(A,B,M,_,_,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
+        M>1,jack_va_en_carromato(A,W,B).
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),M2 is (M-1),
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
         camino(W,B,M2,LI,CA,[W|VIS],T).
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
-        M>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),M2 is (M-1),
-        camino(W,B,M2,LI,CA,[W|VIS],T).
+        M>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        camino(W,B,M2,LI_N,CA,[W|VIS],T).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
+        M>1,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,M2 is (M-2),CA_N is (CA-1),
+        camino(W2,B,M2,LI,CA_N,[[W,W2]|VIS],T).
 
 jack_camina(A,B):-
         conectados(A,B),
