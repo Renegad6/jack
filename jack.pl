@@ -177,20 +177,20 @@ banner:-
 
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
-camino(A,B,M,_,_,_,[etapa(B,yes,no)]):-
-        M>0,jack_pasa_por_callejon(A,B).
-camino(A,B,M,_,_,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
-        M>1,jack_va_en_carromato(A,W,B).
+camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,B).
+camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
+        M>1,CA>0,jack_va_en_carromato(A,W,B).
 
-camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
-        camino(W,B,M2,LI,CA,[[A,W]|VIS],T).
-camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
-        M>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
-        camino(W,B,M2,LI_N,CA,[[A,W]|VIS],T).
-camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
-        M>1,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
-        camino(W2,B,M2,LI,CA_N,[[A,W,W2]|VIS],T).
+        camino(W,B,M2,LI,CA,[[A,W]|VIS],_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        camino(W,B,M2,LI_N,CA,[[A,W]|VIS],_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
+        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        camino(W2,B,M2,LI,CA_N,[[A,W,W2]|VIS],_).
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -290,50 +290,87 @@ conexion(2,9).
 conexion(2,11).
 conexion(2,3).
 
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
-conexion(?,26).
+conexion(3,9).
+conexion(3,11).
+conexion(3,4).
+conexion(3,5).
+
+conexion(4,11).
+conexion(4,12).
+conexion(4,5).
+
+conexion(5,12).
+conexion(5,13).
+conexion(5,15).
+conexion(5,16).
+conexion(5,17).
+
+conexion(6,24).
+conexion(6,25).
+conexion(6, 7).
+conexion(6,44).
+conexion(6,26).
+
+conexion(7,24).
+conexion(7,25).
+conexion(7,26).
+conexion(7,44).
+
+conexion(8,26).
+conexion(8,28).
+conexion(8, 9).
+conexion(8,10).
+
+conexion(9,10).
+conexion(9,11).
+
+conexion(10,30).
+
+conexion(11,12).
+conexion(11,30).
+
+conexion(12,13).
+conexion(12,30).
+
+conexion(13,14).
+conexion(13,15).
+conexion(13,16).
+conexion(13,17).
+conexion(13,30).
+conexion(13,32).
+
+conexion(14,30).
+conexion(14,31).
+conexion(14,32).
+conexion(14,33).
+conexion(14,34).
+conexion(14,52).
+conexion(14,54).
+
+conexion(15,16).
+conexion(15,17).
+conexion(15,33).
+conexion(15,34).
+conexion(15,35).
+conexion(15,36).
+
+conexion(16,17).
+conexion(16,33).
+conexion(16,36).
+
+conexion(17,18).
+conexion(17,36).
+conexion(17,38).
+
+conexion(18,19).
+conexion(18,20).
+conexion(18,36).
+conexion(18,38).
+conexion(18,39).
+
+conexion(19,20).
+conexion(19,39).
 
 /* callejones */
+callejon(1,26).
+callejon(3,11).
