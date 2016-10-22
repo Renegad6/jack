@@ -3,25 +3,29 @@
 */
 
 jack :-
+        banner,
         write("Sombras sobre Londres... v.0.1, (C) Jorge de Antonio,"),nl,
         write("   empieza una nueva partida"),nl,
         init.
 
 elige_guarida :-
-        random(1,200,G),
-        assertz(guarida(G)),
+        random(1,4,G),
+        abolish(guarida,1),assertz(guarida(G)),
         write(" .... Ya tengo mi guarida... bwahahahaha...."),nl.
 
 otra_noche_mas :-
-        jack_libre,
-        queda_por_matar,
-        noche(N),retract(noche(_)),(N is N+1),assertz(noche(N)),
-        retract(pe(_,_)),
-        cuantas_pes(N,P),
+        jack_libre(yes),
+        queda_por_matar(yes),
+        noche(N),retract(noche(_)),(N2 is N+1),assertz(noche(N2)),
+        abolish(pe,2),assert(pe(1,0)),assert(pe(2,0)),assert(pe(3,0)),assert(pe(4,0)),assert(pe(5,0)),assert(pe(6,0)),assert(pe(7,0)),
+        cuantas_pes(N2,P),
         coloca_pes_una_a_una(P),
-        retract(linternas_que_quedan(_)),linternas_por_noche(N,LI),assertz(linternas_que_quedan(LI)),
-        retract(carromatos_que_quedan(_)),carromatos_por_noche(N,CARR),assertz(carromatos_que_quedan(CARR)),
-        write(" .... ya he colocado las pe's, comienza noche "),write(N),write(",bwahahahaha...."),nl.
+        coloca_polis,
+        abolish(linternas_que_quedan,1),linternas_por_noche(N2,LI),assertz(linternas_que_quedan(LI)),
+        abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
+        abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
+        abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),
+        write(" .... ya he colocado las pe's, comienza noche "),write(N2),write(",bwahahahaha...."),nl.
 
 mata_una :-
         jack_mata_una(C),
@@ -38,29 +42,36 @@ mata_dos :-
         jack_en(CR).
 
 mueve_jack :-
-        jack_libre,
-        queda_por_matar,
-        jack_no_en_guarida.
+        jack_libre(yes),
+        queda_por_matar(yes),
+        \+ jack_en_guarida,
+        posicion_jack(P),
+        guarida(G),
+        movimientos_que_quedan(M),
+        linternas_que_quedan(LI),
+        carromatos_que_quedan(CA),
+        camino(P,G,M,LI,CA,[],CAM),!,
+        procesa_etapa(CAM).
 
 donde_poli(P) :-
-        jack_libre,
-        queda_por_matar,
+        jack_libre(yes),
+        queda_por_matar(yes),
         write("Poli:"),write(P),nl,
         write("  Entre:"),read(A),nl,
         write("  y:"),read(B),nl,
         poli_esta_en(P,A,B).
 
-arresto(C) :-
-        jack_libre,
-        queda_por_matar,
-        jack_en(C),
+arresto(C):-
+        jack_libre(yes),
+        queda_por_matar(yes),
+        posicion_jack(C),
         write("... aaarggghhhh me habeis pilladooooooooooooooooo......"),
-        banner,
-        retract(jack_libre).
+        retract(jack_libre(yes)),
+        assertz(jack_libre(no)).
 
 pista(C) :-
-        jack_libre,
-        queda_por_matar,
+        jack_libre(yes),
+        queda_por_matar(yes),
         jack_ha_estado(C),
         write(".... ssiiii!!!!!"),nl.
 pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
@@ -68,42 +79,35 @@ pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
 
 /* Funciones auxiliares .*/
 init :-
-        retract(guarida(_)),
-        retract(poli(_,_,_)),
-        retract(crime_scene(_)),
-        assertz(jack_libre),
-        assertz(queda_por_matar),
-        retract(noche(_)),
-        retract(jack_ha_estado(_)),
+        abolish(guarida,1),
+        abolish(poli,3),
+        abolish(crime_scene,1),assertz(crime_scene(0)),
+        abolish(jack_libre,1),assertz(jack_libre(yes)),
+        abolish(posicion_jack,1),
+        abolish(queda_por_matar,1),assertz(queda_por_matar(yes)),
+        abolish(noche,1),
+        abolish(jack_ha_estado,1),
         assertz(noche(0)).
 
-coloca_pes_una_a_una(P) :-
-        (P > 0),
-        coloca_pe,
-        coloca_pes_una_a_una(P-1).
 coloca_pes_una_a_una(0).
-
-coloca_pe :-
-        random(1,7,P),
-        pe_no_ha_sido_colocada(P),
+coloca_pes_una_a_una(P) :-
+        P>0,
+        coloca_pe(P),
+        P2 is P-1,
+        coloca_pes_una_a_una(P2).
+coloca_pe(P):-
         salida_pe(P,C),
-        not_crime_scene(C),
-        assertz(pe(P,C)).
+        \+crime_scene(C),
+        retract(pe(P,_)),assertz(pe(P,C)).
+coloca_polis:-
+        assertz(poli(rojo,2,3)).
         
-not_crime_scene(C) :- 
-        crime_scene(C),fail.
-not_crime_scene(_).
-
-pe_no_ha_sido_colocada(P) :-
-        pe(P,_),fail.
-pe_no_ha_sido_colocada(P).
-
 jack_mata_una(C) :-
         random(1,7,P),
-        pe(P,C),retract(pe(P,C)).
+        pe(P,C).
 
 jack_en(C) :-
-        retract(posicion_jack(_)),assertz(posicion_jack(C)).
+        abolish(posicion_jack,1),assertz(posicion_jack(C)).
 
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
@@ -111,10 +115,9 @@ elige_donde_jack(C,CC,RC) :-
 decide(0,C,_,C).
 decide(1,_,CC,CC).
 
-jack_no_en_guarida :- posicion_jack(C),guarida(G),C \== G.
 jack_en_guarida :- posicion_jack(C),guarida(C).
 
-poli_esta_en(P,0,0):-.
+poli_esta_en(_,0,0).
 poli_esta_en(P,A,B):-
         assertz(poli(P,A,B)),
         donde_poli(P).
@@ -202,7 +205,7 @@ camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
         M>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
         camino(W,B,M2,LI_N,CA,[W|VIS],T).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
-        M>1,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,M2 is (M-2),CA_N is (CA-1),
+        M>1,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
         camino(W2,B,M2,LI,CA_N,[[W,W2]|VIS],T).
 
 jack_camina(A,B):-
@@ -221,6 +224,33 @@ conectados(A,B):-
 conectados(A,B):-
         conexion(B,A).
 
+procesa_etapa([]):-
+        retract(jack_libre(yes)),
+        assertz(jack_libre(no)),
+        write("...... no me puedo moveeeer, me habeis pilladoooooooo"),nl.
+procesa_etapa([etapa(D,no,no)|_]):-
+        movimientos_que_quedan(M),
+        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(D)),
+        retract(posicion_jack(_)),assertz(posicion_jack(D)),
+        retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
+        write("...... ya me he movido.... bwahahahaha"),nl.
+procesa_etapa([etapa(D,yes,no)|_]):-
+        movimientos_que_quedan(M),
+        linternas_que_quedan(LI),
+        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(D)),
+        retract(posicion_jack(_)),assertz(posicion_jack(D)),
+        retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
+        retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(movimientos_que_quedan(LI_N)),
+        write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl.
+procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
+        movimientos_que_quedan(M),
+        carromatos_que_quedan(CA),
+        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(I)),assertz(jack_ha_estado(D)),
+        retract(posicion_jack(_)),assertz(posicion_jack(D)),
+        retract(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
+        retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(movimientos_que_quedan(CA_N)),
+        write("...... ya me he movido, usando un carromato!!!.... bwahahahaha.."),nl.
+
 /* Configuracion del juego */
 
 /* prostituas  por noche */
@@ -230,12 +260,13 @@ cuantas_pes(3,3).
 cuantas_pes(4,2).
 
 /* posiciones de salida de las pes */
-salida_pe(1,134).
-salida_pe(2,134).
-salida_pe(3,134).
-salida_pe(4,134).
-salida_pe(5,134).
-salida_pe(7,134).
+salida_pe(1,1).
+salida_pe(2,1).
+salida_pe(3,1).
+salida_pe(4,1).
+salida_pe(5,1).
+salida_pe(6,1).
+salida_pe(7,1).
 
 /* descripcion del etapa */
 conexion(1,2).
@@ -245,3 +276,13 @@ conexion(4,5).
 poli(rojo,2,4).
 callejon(2,4).
 callejon(3,4).
+
+linternas_por_noche(1,3).
+linternas_por_noche(2,3).
+linternas_por_noche(3,3).
+linternas_por_noche(4,3).
+
+carromatos_por_noche(1,2).
+carromatos_por_noche(2,2).
+carromatos_por_noche(3,2).
+carromatos_por_noche(4,2).
