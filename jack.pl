@@ -9,9 +9,12 @@ jack :-
         init.
 
 elige_guarida :-
-        random(1,4,G),
+        repeat,
+        random(1,200,G),
         puede_ser_guarida(G),
         abolish(guarida,1),assertz(guarida(G)),
+        file_id(ID),
+        write(ID,"guarida:"),write(ID,G),nl(ID),
         write(" .... Ya tengo mi guarida... bwahahahaha...."),nl.
 
 otra_noche_mas :-
@@ -32,6 +35,7 @@ mata_una :-
         jack_en(C).
 
 mata_dos :-
+        repeat,
         jack_mata_una(C),
         jack_mata_una(CC),
         \+C=CC,
@@ -97,18 +101,18 @@ init :-
         abolish(queda_por_matar,1),assertz(queda_por_matar(yes)),
         abolish(noche,1),
         abolish(jack_ha_estado,1),
+        open('jack.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),write(ID,"jack!"),nl(ID),
         assertz(noche(0)).
 
 puede_ser_guarida(G):-
         \+salida_pe(_,G).
 
 jack_mata_una(C) :-
+        repeat,
         random(1,8,P),
         salida_pe(P,C),
-        \+crime_scene(C).
-
-jack_en(C) :-
-        abolish(posicion_jack,1),assertz(posicion_jack(C)).
+        \+crime_scene(C),
+        file_id(ID),write(ID,"mato en:"),write(ID,C),nl(ID).
 
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
@@ -213,28 +217,33 @@ procesa_etapa([]):-
         assertz(jack_libre(no)),
         write("...... no me puedo moveeeer, me habeis pilladoooooooo"),nl.
 procesa_etapa([etapa(D,no,no)|_]):-
+        jack_en(D),
         movimientos_que_quedan(M),
-        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(D)),
-        retract(posicion_jack(_)),assertz(posicion_jack(D)),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         write("...... ya me he movido.... bwahahahaha"),nl.
 procesa_etapa([etapa(D,yes,no)|_]):-
+        jack_en(D),
         movimientos_que_quedan(M),
         linternas_que_quedan(LI),
-        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(D)),
         retract(posicion_jack(_)),assertz(posicion_jack(D)),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(movimientos_que_quedan(LI_N)),
         write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
+        jack_en(I),
+        jack_en(D),
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
-        posicion_jack(P),assertz(jack_ha_estado(P)),assertz(jack_ha_estado(I)),assertz(jack_ha_estado(D)),
-        retract(posicion_jack(_)),assertz(posicion_jack(D)),
         retract(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
         retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(movimientos_que_quedan(CA_N)),
         write("...... ya me he movido, usando un carromato!!!.... bwahahahaha.."),nl.
 
+jack_en(P):-
+        assertz(jack_ha_estado(P)),
+        retract(posicion_jack(_)),assertz(posicion_jack(P)),
+        file_id(ID),
+        write(ID,"paso por:"),write(ID,P),nl(ID).
+        
 /* Configuracion del juego */
 
 /* prostituas  por noche */
