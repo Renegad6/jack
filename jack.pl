@@ -15,7 +15,7 @@ elige_guarida :-
         abolish(guarida,1),assertz(guarida(G)),
         file_id(ID),
         write(ID,"guarida:"),write(ID,G),nl(ID),
-        write(" .... Ya tengo mi guarida... bwahahahaha...."),nl.
+        write(" .... Ya tengo mi guarida... bwahahahaha...."),nl,!.
 
 otra_noche_mas :-
         jack_libre(yes),
@@ -26,13 +26,14 @@ otra_noche_mas :-
         abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
         abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
         abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),
-        write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl.
+        write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl,
+        file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID).
 
 mata_una :-
         jack_mata_una(C),
         write(" .... Jack mata en.. "),write(C),write(", ... bwahahahaha"),nl,
         write("Polis, dejad de comer donuts (y mear) y moveos!!!"),nl,
-        jack_en(C).
+        jack_en(C),!.
 
 mata_dos :-
         repeat,
@@ -70,6 +71,28 @@ mueve_jack :-
         procesa_etapa(CAM),
         avisa_si_en_guarida,
         avisa_si_jack_escapa.
+/* si no hay un camino , intentar moverse a alguna de las posiciones
+ * adyacentes y esperar a que los policias se muevan y despejen el paso */
+mueve_jack :-
+        jack_libre(yes),
+        queda_por_matar(yes),
+        \+ jack_en_guarida,
+        posicion_jack(P),
+        linternas_que_quedan(LI),
+        carromatos_que_quedan(CA),
+        repeat,
+        conexion(P,X),
+        camino(P,X,1,LI,CA,[],CAM),!,
+        procesa_etapa(CAM),
+        avisa_si_en_guarida,
+        avisa_si_jack_escapa.
+mueve_jack :-
+        jack_libre(yes),
+        queda_por_matar(yes),
+        \+ jack_en_guarida,
+        write("No me puedo moveeeer, me habeis pilladoooooooooo!!!"),nl,
+        retract(jack_libre(yes)),assertz(jack_libre(no)).
+
 
 donde_poli(P,A,B) :-
         jack_libre(yes),
@@ -130,10 +153,6 @@ avisa_si_jack_escapa :-
 avisa_si_jack_escapa.
 
 
-anuncia_movimiento(1,_):-
-        write(".. voy a usar ... una linterna!! me meti por una callejon!! bwahahahaha"),nl.
-anuncia_movimiento(_,1):-
-        write(".. voy a usar ... un carromato!! voy a toda pastillaao!! bwahahahaha"),nl.
 banner:-
         write("                             ud$$$**$$$$$$$bc.                          "),nl,
         write("                          u@**%        4$$$$$$$Nu                       "),nl,
@@ -188,13 +207,13 @@ camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
-        camino(W,B,M2,LI,CA,[[A,W]|VIS],_).
+        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
         M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
-        camino(W,B,M2,LI_N,CA,[[A,W]|VIS],_).
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
-        camino(W2,B,M2,LI,CA_N,[[A,W,W2]|VIS],_).
+        append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
 
 jack_camina(A,B):-
         conectados(A,B),
