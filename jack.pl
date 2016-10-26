@@ -94,10 +94,13 @@ mueve_jack :-
         retract(jack_libre(yes)),assertz(jack_libre(no)).
 
 
-donde_poli(P,A,B) :-
+pon_polis:-
         jack_libre(yes),
         queda_por_matar(yes),
-        retract(poli(P,_,_)),assertz(poli(P,A,B)).
+        abolish(poli,3),
+        repeat,
+        write("poli:"),read(P),
+        lee_poli(P).
 
 arresto(C):-
         jack_libre(yes),
@@ -107,13 +110,13 @@ arresto(C):-
         retract(jack_libre(yes)),
         assertz(jack_libre(no)).
 
-pista(C) :-
+pista:-
         jack_libre(yes),
         queda_por_matar(yes),
-        jack_ha_estado(C),
-        write(".... vaaaale, si he estado ahhi!!!!!"),nl.
-pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
-
+        repeat,
+        write("donde:"),read(C),
+        examina_pista(C),
+        fail.
 
 /* Funciones auxiliares .*/
 init :-
@@ -263,6 +266,20 @@ jack_en(P):-
         file_id(ID),
         write(ID,"paso por:"),write(ID,P),nl(ID).
         
+lee_poli(P):-
+        write("poli:"),write(P),nl,
+        write("en:"),
+        read(C1),
+        write("y:"),
+        read(C2),
+        assertz(poli(P,C1,C2)),
+        fail.
+
+examina_pista(C) :-
+        jack_ha_estado(C),
+        write(".... vaaaale, si he estado ahhi!!!!!"),nl,!.
+examina_pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
+
 /* Configuracion del juego */
 
 /* prostituas  por noche */
