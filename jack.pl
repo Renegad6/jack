@@ -94,12 +94,12 @@ mueve_jack :-
         retract(jack_libre(yes)),assertz(jack_libre(no)).
 
 
-pon_polis:-
+pon_poli:-
         jack_libre(yes),
         queda_por_matar(yes),
-        abolish(poli,3),
         repeat,
         write("poli:"),read(P),
+        retract(poli(P,_,_)),
         lee_poli(P).
 
 arresto(C):-
@@ -128,6 +128,7 @@ init :-
         abolish(noche,1),
         abolish(jack_ha_estado,1),
         open('jack.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),write(ID,"jack!"),nl(ID),
+        polis_inicio,
         assertz(noche(0)).
 
 puede_ser_guarida(G):-
@@ -208,15 +209,15 @@ camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
 camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
-camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+cerca_polis(W),M2 is (M-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -239,32 +240,32 @@ procesa_etapa([]):-
         assertz(jack_libre(no)),
         write("...... no me puedo moveeeer, me habeis pilladoooooooo"),nl.
 procesa_etapa([etapa(D,no,no)|_]):-
-        jack_en(D),
         movimientos_que_quedan(M),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
+        jack_en(D),
         write("...... ya me he movido.... bwahahahaha"),nl.
 procesa_etapa([etapa(D,yes,no)|_]):-
-        jack_en(D),
         movimientos_que_quedan(M),
         linternas_que_quedan(LI),
-        retract(posicion_jack(_)),assertz(posicion_jack(D)),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(movimientos_que_quedan(LI_N)),
+        jack_en(D),
         write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
-        jack_en(I),
-        jack_en(D),
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
         retract(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
         retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(movimientos_que_quedan(CA_N)),
+        jack_en(I),
+        jack_en(D),
         write("...... ya me he movido, usando un carromato!!!.... bwahahahaha.."),nl.
 
 jack_en(P):-
         assertz(jack_ha_estado(P)),
         retract(posicion_jack(_)),assertz(posicion_jack(P)),
         file_id(ID),
-        write(ID,"paso por:"),write(ID,P),nl(ID).
+        movimientos_que_quedan(M),linternas_que_quedan(L),carromatos_que_quedan(C),
+        write(ID,"paso por:"),write(ID,P),write(ID,"mov:"),write(ID,M),write(ID,"lin:"),write(ID,L),write(ID,"carr:"),write(ID,C),nl(ID).
         
 lee_poli(P):-
         write("poli:"),write(P),nl,
@@ -279,6 +280,9 @@ examina_pista(C) :-
         jack_ha_estado(C),
         write(".... vaaaale, si he estado ahhi!!!!!"),nl,!.
 examina_pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
+
+cerca_polis(P):-
+        poli(_,P,_);poli(_,_,P).
 
 /* Configuracion del juego */
 
@@ -299,11 +303,12 @@ salida_pe(7,158).
 salida_pe(8,147).
 
 /* descripcion del etapa */
-poli(rojo,0,0).
-poli(verde,0,0).
-poli(azul,0,0).
-poli(amarillo,0,0).
-poli(marron,0,0).
+polis_inicio:-
+        assertz(poli(rojo,0,0)),
+        assertz(poli(verde,0,0)),
+        assertz(poli(azul,0,0)),
+        assertz(poli(amarillo,0,0)),
+        assertz(poli(marron,0,0)).
 
 linternas_por_noche(1,3).
 linternas_por_noche(2,3).
@@ -415,7 +420,87 @@ conexion(18,39).
 
 conexion(19,20).
 conexion(19,39).
+conexion(20,40).
+conexion(21,40).
+conexion(21,41).
+conexion(21,42).
+conexion(21,23).
+
+conexion(22,42).
+conexion(22,23).
+conexion(22,77).
+
+conexion(23,77).
+
+conexion(24,26).
+conexion(24,25).
+conexion(24,44).
+conexion(24,43).
+conexion(24,59).
+
+conexion(25,26).
+conexion(25,44).
+conexion(25,43).
+conexion(25,59).
+
+conexion(26,28).
+conexion(26,44).
+conexion(26,79).
+conexion(26,46).
+conexion(26,27).
+
+conexion(27,44).
+conexion(27,79).
+conexion(27,46).
+conexion(27,28).
+conexion(27,45).
+conexion(27,47).
+conexion(27,48).
+conexion(27,29).
+
+conexion(28,46).
+conexion(28,45).
+conexion(28,47).
+conexion(28,48).
+conexion(28,29).
+
+conexion(29,46).
+conexion(29,45).
+conexion(29,47).
+conexion(29,48).
+conexion(29,30).
+conexion(29,49).
+conexion(29,64).
+conexion(29,66).
+conexion(29,50).
+
+conexion(30,49).
+conexion(30,64).
+conexion(30,66).
+conexion(30,50).
+conexion(30,32).
 
 /* callejones */
-callejon(1,26).
-callejon(3,11).
+callejones(1,7).
+callejones(1,26).
+callejones(2,9).
+callejones(3,4).
+callejones(3,11).
+callejones(4,11).
+callejones(4,5).
+callejones(4,12).
+callejones(5,12).
+callejones(6,24).
+callejones(6,7).
+callejones(7,26).
+callejones(8,9).
+callejones(8,28).
+callejones(8,29).
+callejones(8,30).
+callejones(8,10).
+callejones(9,10).
+callejones(9,11).
+callejones(10,11).
+callejones(10,28).
+callejones(10,29).
+callejones(10,30).
