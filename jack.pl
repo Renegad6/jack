@@ -142,6 +142,10 @@ jack_mata_una(C) :-
         \+cerca_polis(C),
         file_id(ID),write(ID,"mato en:"),write(ID,C),nl(ID).
 
+matanza(P) :-
+        salida_pe(P,C),
+        file_id(ID),write(ID,"mato por mandato en:"),write(ID,C),nl(ID).
+
 elige_donde_jack(C,CC,RC) :-
         random(0,1,X),
         decide(X,C,CC,RC).
