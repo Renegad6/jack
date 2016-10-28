@@ -139,6 +139,7 @@ jack_mata_una(C) :-
         random(1,8,P),
         salida_pe(P,C),
         \+crime_scene(C),
+        \+cerca_polis(C),
         file_id(ID),write(ID,"mato en:"),write(ID,C),nl(ID).
 
 elige_donde_jack(C,CC,RC) :-
@@ -210,22 +211,22 @@ camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
+        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+muy_cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+cerca_polis(W),M2 is (M-1),
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 
 jack_camina(A,B):-
         conectados(A,B),
         \+poli(_,A,B).
 jack_pasa_por_callejon(A,B):-
-        callejon(A,B).
+        callejon(A,B),\+jack_camina(A,B).
 jack_pasa_por_callejon(A,B):-
-        callejon(B,A).
+        callejon(B,A),\+jack_camina(B,A).
 jack_va_en_carromato(A,B,C):-
         conectados(A,B),\+poli(_,A,B),
         conectados(B,C),\+poli(_,B,C).
@@ -282,6 +283,13 @@ examina_pista(C) :-
 examina_pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
 
 cerca_polis(P):-
+        poli(_,A,B),
+        (muy_cerca_polis(A);muy_cerca_polis(B)).
+cerca_polis(P):-
+        poli(_,A,B),conexion(A,C),conexion(B,D),
+        (muy_cerca_polis(C);muy_cerca_polis(D)).
+
+muy_cerca_polis(P):-
         poli(_,P,_);poli(_,_,P).
 
 /* Configuracion del juego */
@@ -481,26 +489,26 @@ conexion(30,50).
 conexion(30,32).
 
 /* callejones */
-callejones(1,7).
-callejones(1,26).
-callejones(2,9).
-callejones(3,4).
-callejones(3,11).
-callejones(4,11).
-callejones(4,5).
-callejones(4,12).
-callejones(5,12).
-callejones(6,24).
-callejones(6,7).
-callejones(7,26).
-callejones(8,9).
-callejones(8,28).
-callejones(8,29).
-callejones(8,30).
-callejones(8,10).
-callejones(9,10).
-callejones(9,11).
-callejones(10,11).
-callejones(10,28).
-callejones(10,29).
-callejones(10,30).
+callejon(1,7).
+callejon(1,26).
+callejon(2,9).
+callejon(3,4).
+callejon(3,11).
+callejon(4,11).
+callejon(4,5).
+callejon(4,12).
+callejon(5,12).
+callejon(6,24).
+callejon(6,7).
+callejon(7,26).
+callejon(8,9).
+callejon(8,28).
+callejon(8,29).
+callejon(8,30).
+callejon(8,10).
+callejon(9,10).
+callejon(9,11).
+callejon(10,11).
+callejon(10,28).
+callejon(10,29).
+callejon(10,30).
