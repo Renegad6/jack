@@ -287,11 +287,12 @@ examina_pista(C) :-
 examina_pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
 
 cerca_polis(P):-
-        poli(_,A,B),
-        (muy_cerca_polis(A);muy_cerca_polis(B)).
+        (poli(_,P,A);poli(_,A,P)),
+        muy_cerca_polis(A).
 cerca_polis(P):-
-        poli(_,A,B),conexion(A,C),conexion(B,D),
-        (muy_cerca_polis(C);muy_cerca_polis(D)).
+        (poli(_,P,A);poli(_,A,P)),
+        (conexion(A,C);conexion(C,A)),
+        muy_cerca_polis(C).
 
 muy_cerca_polis(P):-
         poli(_,P,_);poli(_,_,P).
@@ -492,6 +493,65 @@ conexion(30,66).
 conexion(30,50).
 conexion(30,32).
 
+conexion(31,50).
+conexion(31,32).
+conexion(31,51).
+conexion(31,52).
+conexion(31,32).
+conexion(31,54).
+conexion(31,33).
+
+conexion(32,33).
+conexion(32,52).
+conexion(32,54).
+
+conexion(33,52).
+conexion(33,54).
+conexion(33,36).
+conexion(33,34).
+conexion(33,35).
+conexion(33,36).
+
+conexion(34,54).
+conexion(34,53).
+conexion(34,68).
+conexion(34,55).
+conexion(34,35).
+conexion(34,36).
+conexion(34,37).
+
+conexion(35,36).
+conexion(35,54).
+conexion(35,53).
+conexion(35,68).
+conexion(35,55).
+conexion(35,37).
+
+conexion(36,38).
+
+conexion(37,54).
+conexion(37,53).
+conexion(37,68).
+conexion(37,55).
+conexion(37,38).
+conexion(37,39).
+
+conexion(38,39).
+
+conexion(39,56).
+
+conexion(40,41).
+conexion(40,57).
+conexion(40,73).
+conexion(40,58).
+conexion(40,42).
+conexion(40,41).
+
+conexion(41,57).
+conexion(41,73).
+conexion(41,58).
+conexion(41,42).
+
 /* callejones */
 callejon(1,7).
 callejon(1,26).
@@ -516,3 +576,29 @@ callejon(10,11).
 callejon(10,28).
 callejon(10,29).
 callejon(10,30).
+callejon(12,30).
+callejon(12,13).
+callejon(13,30).
+callejon(13,14).
+callejon(13,33).
+callejon(13,15).
+callejon(14,33).
+callejon(14,15).
+callejon(14,32).
+callejon(15,16).
+callejon(15,33).
+callejon(16,17).
+callejon(16,36).
+callejon(17,36).
+callejon(18,38).
+callejon(18,39).
+callejon(18,19).
+callejon(19,39).
+callejon(19,56).
+callejon(19,20).
+callejon(19,40).
+callejon(19,57).
+callejon(20,39).
+callejon(20,56).
+callejon(20,57).
+callejon(20,40).
