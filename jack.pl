@@ -226,6 +226,25 @@ camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
         M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 
+/* debug :cuando camino cambie, replicar anadiendo el Tail*/
+camino_dbg(A,B,M,_,_,_,[etapa(B,no,no)]):-
+        M>0,jack_camina(A,B).
+camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,B).
+camino_dbg(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
+        M>1,CA>0,jack_va_en_carromato(A,W,B).
+
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
+        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+muy_cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
+        M>0,LI>0,jack_pasa_por_callejon(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI_N,CA,VIS_N,T).
+
+
 jack_camina(A,B):-
         conectados(A,B),
         \+poli(_,A,B).
