@@ -9,8 +9,9 @@ jack :-
         init.
 
 elige_guarida :-
+        max_loc(M),
         repeat,
-        random(1,200,G),
+        random(1,M,G),
         puede_ser_guarida(G),
         abolish(guarida,1),assertz(guarida(G)),
         file_id(ID),
@@ -19,7 +20,6 @@ elige_guarida :-
 
 otra_noche_mas :-
         jack_libre(yes),
-        queda_por_matar(yes),
         noche(N),retract(noche(_)),(N2 is N+1),assertz(noche(N2)),
         abolish(pe,2),assert(pe(1,0)),assert(pe(2,0)),assert(pe(3,0)),assert(pe(4,0)),assert(pe(5,0)),assert(pe(6,0)),assert(pe(7,0)),
         abolish(linternas_que_quedan,1),linternas_por_noche(N2,LI),assertz(linternas_que_quedan(LI)),
@@ -43,23 +43,20 @@ mata_dos :-
         write(" .... Jack mata en.. "),write(C),write(", y "),write(CC),write(", ... bwahahahaha"),nl,
         write("Polis, dejad de comer donuts (y mear) y moveos!!!"),nl,
         elige_donde_jack(C,CC,CR),
-        jack_en(CR).
+        jack_en(CR),!.
 
 mueve_jack :-
         jack_libre(yes),
-        queda_por_matar(yes),
         jack_en_guarida,
-        write("Nooooooor que ya estoy en mi guarida!!! bwaahhahahahaaha"),nl.
+        write("Nooooooor que ya estoy en mi guarida!!! bwaahhahahahaaha"),nl,!.
 mueve_jack :-
         jack_libre(yes),
-        queda_por_matar(yes),
         \+ jack_en_guarida,
         movimientos_que_quedan(0),
-        write("He agotado mi limite de movimientos me habeis pilladooooooooo!!!"),nl,
-        retract(jack_libre(yes)),assertz(jack_libre(no)).
+        write("He agotado mi limite de movimientos me habeis pilladooooooooo!!!"),nl,end,
+        retract(jack_libre(yes)),assertz(jack_libre(no)),!.
 mueve_jack :-
         jack_libre(yes),
-        queda_por_matar(yes),
         \+ jack_en_guarida,
         posicion_jack(P),
         guarida(G),
@@ -67,36 +64,35 @@ mueve_jack :-
         M>0,
         linternas_que_quedan(LI),
         carromatos_que_quedan(CA),
-        camino(P,G,M,LI,CA,[],CAM),!,
+        camino(P,G,M,LI,CA,[],CAM),
         procesa_etapa(CAM),
         avisa_si_en_guarida,
-        avisa_si_jack_escapa.
+        avisa_si_jack_escapa,!.
 /* si no hay un camino , intentar moverse a alguna de las posiciones
  * adyacentes y esperar a que los policias se muevan y despejen el paso */
 mueve_jack :-
         jack_libre(yes),
-        queda_por_matar(yes),
         \+ jack_en_guarida,
+        write("mmhh.... esta chungo...!!!"),nl,
         posicion_jack(P),
         linternas_que_quedan(LI),
         carromatos_que_quedan(CA),
-        repeat,
-        conexion(P,X),
-        camino(P,X,1,LI,CA,[],CAM),!,
+        findall(C,(conexion(P,C);conexion(C,P)),LC),
+        siguiente_cnx(LC,CX,LC2),
+        LC is LC2,
+        camino(P,CX,1,LI,CA,[],CAM),
         procesa_etapa(CAM),
         avisa_si_en_guarida,
-        avisa_si_jack_escapa.
+        avisa_si_jack_escapa,!.
 mueve_jack :-
         jack_libre(yes),
-        queda_por_matar(yes),
         \+ jack_en_guarida,
-        write("No me puedo moveeeer, me habeis pilladoooooooooo!!!"),nl,
-        retract(jack_libre(yes)),assertz(jack_libre(no)).
+        write("No me puedo moveeeer, me habeis pilladoooooooooo!!!"),nl,end,
+        retract(jack_libre(yes)),assertz(jack_libre(no)),!.
 
 
 pon_poli:-
         jack_libre(yes),
-        queda_por_matar(yes),
         repeat,
         write("poli:"),read(P),
         retract(poli(P,_,_)),
@@ -104,15 +100,13 @@ pon_poli:-
 
 arresto(C):-
         jack_libre(yes),
-        queda_por_matar(yes),
         posicion_jack(C),
-        write("... aaarggghhhh me habeis pilladooooooooooooooooo......"),
+        write("... aaarggghhhh me habeis pilladooooooooooooooooo......"),nl,end,
         retract(jack_libre(yes)),
         assertz(jack_libre(no)).
 
 pista:-
         jack_libre(yes),
-        queda_por_matar(yes),
         repeat,
         write("donde:"),read(C),
         examina_pista(C),
@@ -124,7 +118,6 @@ init :-
         abolish(crime_scene,1),assertz(crime_scene(0)),
         abolish(jack_libre,1),assertz(jack_libre(yes)),
         abolish(posicion_jack,1),
-        abolish(queda_por_matar,1),assertz(queda_por_matar(yes)),
         abolish(noche,1),
         abolish(jack_ha_estado,1),
         open('jack.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),write(ID,"jack!"),nl(ID),
@@ -158,7 +151,7 @@ avisa_si_en_guarida :-
         jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl.
 avisa_si_en_guarida.
 avisa_si_jack_escapa :-
-        jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl.
+        jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl,end,
 avisa_si_jack_escapa.
 
 
@@ -204,7 +197,16 @@ banner:-
         write("              %$F $$$$$%                              ^b  ^$$$$b$       "),nl,
         write("               %$W$$$$%                                %b@$$$$%         "),nl,
         write("                                                        ^$$$*           "),nl.
-
+end:-
+        write("       EEEEEEEEE    N       N   DDD                                     "),nl,
+        write("       EEE          N N     N   DD D                                    "),nl,
+        write("       EEE          N  N    N   DD  D                                   "),nl,
+        write("       EEEEE        N   N   N   DD   D                                  "),nl,
+        write("       EEE          N    N  N   DD  D                                   "),nl,
+        write("       EEE          N     N N   DD D                                    "),nl,
+        write("       EEEEEEEEE    N      N    DDD                                     "),nl,
+        write("                                                                        "),nl.
+ 
 /* movimiento */
 
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
@@ -240,10 +242,6 @@ conectados(A,B):-
 conectados(A,B):-
         conexion(B,A).
 
-procesa_etapa([]):-
-        retract(jack_libre(yes)),
-        assertz(jack_libre(no)),
-        write("...... no me puedo moveeeer, me habeis pilladoooooooo"),nl.
 procesa_etapa([etapa(D,no,no)|_]):-
         movimientos_que_quedan(M),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
@@ -253,14 +251,14 @@ procesa_etapa([etapa(D,yes,no)|_]):-
         movimientos_que_quedan(M),
         linternas_que_quedan(LI),
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
-        retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(movimientos_que_quedan(LI_N)),
+        retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         jack_en(D),
         write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
         retract(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
-        retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(movimientos_que_quedan(CA_N)),
+        retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(carromatos_que_quedan(CA_N)),
         jack_en(I),
         jack_en(D),
         write("...... ya me he movido, usando un carromato!!!.... bwahahahaha.."),nl.
@@ -270,7 +268,7 @@ jack_en(P):-
         retract(posicion_jack(_)),assertz(posicion_jack(P)),
         file_id(ID),
         movimientos_que_quedan(M),linternas_que_quedan(L),carromatos_que_quedan(C),
-        write(ID,"paso por:"),write(ID,P),write(ID,"mov:"),write(ID,M),write(ID,"lin:"),write(ID,L),write(ID,"carr:"),write(ID,C),nl(ID).
+        write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID).
         
 lee_poli(P):-
         write("poli:"),write(P),nl,
@@ -297,13 +295,14 @@ cerca_polis(P):-
 muy_cerca_polis(P):-
         poli(_,P,_);poli(_,_,P).
 
-/* Configuracion del juego */
+max_loc(M):-
+        bagof(N,conexion(_,N),Ns),
+        max_list(Ns,M).
 
-/* prostituas  por noche */
-cuantas_pes(1,5).
-cuantas_pes(2,4).
-cuantas_pes(3,3).
-cuantas_pes(4,2).
+siguiente_cnx([],_,_):-fail.
+siguiente_cnx([H|T],H,T).
+
+/* Configuracion del juego */
 
 /* posiciones de salida de las pes */
 salida_pe(1,3).
