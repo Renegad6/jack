@@ -4,7 +4,7 @@
 
 jack :-
         banner,
-        write("Sombras sobre Londres... v.0.1, (C) Jorge de Antonio,"),nl,
+        write("Sombras sobre Londres... v.1.1, (C) Jorge de Antonio,"),nl,
         write("   empieza una nueva partida"),nl,
         init.
 
@@ -26,6 +26,7 @@ otra_noche_mas :-
         abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
         abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
         abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),
+        polis_pueden_jugar,
         write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl,
         file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID).
 
@@ -95,22 +96,48 @@ pon_poli:-
         jack_libre(yes),
         repeat,
         write("poli:"),read(P),
-        retract(poli(P,_,_)),
-        lee_poli(P).
+        poli(P),
+        retract(poli_en(P,_,_)),
+        lee_poli_en(P).
 
-arresto(C):-
+
+arresto:-
+        write("poli:"),read(P),
+        poli(P),
+        arresto(P).
+arresto(P):-
         jack_libre(yes),
+        poli_ha_jugado(P,yes),
+        write("... listoooo que ese poli ya ha jugadoooo......"),nl,!.
+arresto(P):-
+        jack_libre(yes),
+        poli_ha_jugado(P,no),
+        write("donde:"),read(A),
+        arresto(P,A).
+arresto(_,A):-
         posicion_jack(C),
+        A = C,
         write("... aaarggghhhh me habeis pilladooooooooooooooooo......"),nl,end,
         retract(jack_libre(yes)),
-        assertz(jack_libre(no)).
+        assertz(jack_libre(no)),!.
+arresto(P,_):- 
+        write(" .... mmmmmmmhhh  no!! :D"),nl,
+        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
 
 pista:-
+        write("poli:"),read(P),
+        pista(P).
+
+pista(P):-
         jack_libre(yes),
+        poli_ha_jugado(P,yes),
+        write("... listoooo que ese poli ya ha jugadoooo......"),nl.
+pista(P):-
+        jack_libre(yes),
+        poli_ha_jugado(P,no),
         repeat,
         write("donde:"),read(C),
-        examina_pista(C),
-        fail.
+        examina_pista(P,C).
 
 /* Funciones auxiliares .*/
 init :-
@@ -247,14 +274,14 @@ camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
 
 jack_camina(A,B):-
         conectados(A,B),
-        \+poli(_,A,B).
+        \+poli_en(_,A,B).
 jack_pasa_por_callejon(A,B):-
         callejon(A,B),\+jack_camina(A,B).
 jack_pasa_por_callejon(A,B):-
         callejon(B,A),\+jack_camina(B,A).
 jack_va_en_carromato(A,B,C):-
-        conectados(A,B),\+poli(_,A,B),
-        conectados(B,C),\+poli(_,B,C).
+        conectados(A,B),\+poli_en(_,A,B),
+        conectados(B,C),\+poli_en(_,B,C).
 
 conectados(A,B):-
         conexion(A,B).
@@ -289,30 +316,36 @@ jack_en(P):-
         movimientos_que_quedan(M),linternas_que_quedan(L),carromatos_que_quedan(C),
         write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID).
         
-lee_poli(P):-
+lee_poli_en(P):-
         write("poli:"),write(P),nl,
         write("en:"),
         read(C1),
         write("y:"),
         read(C2),
-        assertz(poli(P,C1,C2)),
-        fail.
+        pon_poli(P,C1,C2).
 
-examina_pista(C) :-
+pon_poli(_,0,_):-!.
+pon_poli(P,X,Y):-
+        assertz(poli_en(P,X,Y)),fail.
+
+examina_pista(P,0) :-
+        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
+examina_pista(P,C) :-
         jack_ha_estado(C),
-        write(".... vaaaale, si he estado ahhi!!!!!"),nl,!.
-examina_pista(_) :- write(" .... mmmmmmmhhh  no!! :D"),nl.
+        write(".... vaaaale, si he estado ahhi!!!!!"),nl,
+        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
+examina_pista(_,_) :- write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
 
 cerca_polis(P):-
-        (poli(_,P,A);poli(_,A,P)),
+        (poli_en(_,P,A);poli_en(_,A,P)),
         muy_cerca_polis(A).
 cerca_polis(P):-
-        (poli(_,P,A);poli(_,A,P)),
+        (poli_en(_,P,A);poli_en(_,A,P)),
         (conexion(A,C);conexion(C,A)),
         muy_cerca_polis(C).
 
 muy_cerca_polis(P):-
-        poli(_,P,_);poli(_,_,P).
+        poli_en(_,P,_);poli_en(_,_,P).
 
 max_loc(M):-
         bagof(N,conexion(_,N),Ns),
@@ -321,7 +354,19 @@ max_loc(M):-
 siguiente_cnx([],_,_):-fail.
 siguiente_cnx([H|T],H,T).
 
+
+polis_inicio:- abolish(poli_en,3),abolish(poli_ha_jugado,2),
+               forall(poli(X),(assertz(poli_en(X,0,0)),assertz(poli_ha_jugado(X,no)))).
+
+polis_pueden_jugar:-
+               abolish(poli_ha_jugado,2),forall(poli(X),assertz(poli_ha_jugado(X,no))).
+
 /* Configuracion del juego */
+poli(r).
+poli(v).
+poli(az).
+poli(am).
+poli(m).
 
 /* posiciones de salida de las pes */
 salida_pe(1,3).
@@ -334,12 +379,6 @@ salida_pe(7,158).
 salida_pe(8,147).
 
 /* descripcion del etapa */
-polis_inicio:-
-        assertz(poli(rojo,0,0)),
-        assertz(poli(verde,0,0)),
-        assertz(poli(azul,0,0)),
-        assertz(poli(amarillo,0,0)),
-        assertz(poli(marron,0,0)).
 
 linternas_por_noche(1,3).
 linternas_por_noche(2,3).
