@@ -84,7 +84,8 @@ mueve_jack :-
         camino(P,CX,1,LI,CA,[],CAM),
         procesa_etapa(CAM),
         avisa_si_en_guarida,
-        avisa_si_jack_escapa,!.
+        avisa_si_jack_escapa,
+        polis_pueden_jugar,!.
 mueve_jack :-
         jack_libre(yes),
         \+ jack_en_guarida,
@@ -127,7 +128,6 @@ arresto(P,_):-
 pista:-
         write("poli:"),read(P),
         pista(P).
-
 pista(P):-
         jack_libre(yes),
         poli_ha_jugado(P,yes),
@@ -243,18 +243,28 @@ camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
 camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
-/* los carromatos se pillan si jack esta rodeado */
+/* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
         M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
+
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
+        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
         M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 
-/* debug :cuando camino cambie, replicar anadiendo el Tail*/
+/* debug :cuando camino_dbg cambie, replicar anadiendo el Tail*/
 camino_dbg(A,B,M,_,_,_,[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
 camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
@@ -262,9 +272,14 @@ camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
 camino_dbg(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
+/* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
 camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+muy_cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
+
 camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
         append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
@@ -275,19 +290,19 @@ camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
 
 jack_camina(A,B):-
         conectados(A,B),
-        \+poli_en(_,A,B).
+        \+poli_enmedio(A,B).
 jack_pasa_por_cj(A,B):-
-        cj(A,B),\+jack_camina(A,B).
-jack_pasa_por_cj(A,B):-
-        cj(B,A),\+jack_camina(B,A).
+        hay_callejon(A,B),\+jack_camina(A,B),!.
 jack_va_en_carromato(A,B,C):-
-        conectados(A,B),\+poli_en(_,A,B),
-        conectados(B,C),\+poli_en(_,B,C).
+        conectados(A,B),\+poli_enmedio(A,B),
+        conectados(B,C),\+poli_enmedio(B,C).
 
 conectados(A,B):-
-        cx(A,B).
-conectados(A,B):-
-        cx(B,A).
+        (cx(A,B);cx(B,A)).
+hay_callejon(A,B):-
+        (cj(A,B);cj(B,A)).
+poli_enmedio(A,B):-
+        (poli_en(_,A,B);poli_en(_,B,A)).
 
 procesa_etapa([etapa(D,no,no)|_]):-
         movimientos_que_quedan(M),
@@ -332,18 +347,19 @@ pon_poli(P,X,Y):-
 examina_pista(P,0) :-
         retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
 examina_pista(P,C) :-
+         \+(poli_en(P,C,_);poli_en(P,_,C)),
+        write(".... listooooo, ahi no puedes mirar! :D"),nl.
+examina_pista(P,C) :-
         jack_ha_estado(C),
         write(".... vaaaale, si he estado ahhi!!!!!"),nl,
         retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
 examina_pista(_,_) :- write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
 
 cerca_polis(P):-
-        (poli_en(_,P,A);poli_en(_,A,P)),
-        muy_cerca_polis(A),!.
+        muy_cerca_polis(P),!.
 cerca_polis(P):-
-        (poli_en(_,P,A);poli_en(_,A,P)),
-        (cx(A,C);cx(C,A)),
-        muy_cerca_polis(C),!.
+        (cx(A,P);cx(P,A)),
+        muy_cerca_polis(A),!.
 
 muy_cerca_polis(P):-
         poli_en(_,P,_);poli_en(_,_,P).
@@ -410,7 +426,6 @@ cx(1,26).
 cx(1,28).
 cx(1,8).
 cx(1,9).
-
 cx(2,26).
 cx(2,26).
 cx(2,28).
@@ -418,56 +433,44 @@ cx(2,8).
 cx(2,9).
 cx(2,11).
 cx(2,3).
-
 cx(3,9).
 cx(3,11).
 cx(3,4).
 cx(3,5).
-
 cx(4,11).
 cx(4,12).
 cx(4,5).
-
 cx(5,12).
 cx(5,13).
 cx(5,15).
 cx(5,16).
 cx(5,17).
-
 cx(6,24).
 cx(6,25).
 cx(6, 7).
 cx(6,44).
 cx(6,26).
-
 cx(7,24).
 cx(7,25).
 cx(7,26).
 cx(7,44).
-
 cx(8,26).
 cx(8,28).
 cx(8, 9).
 cx(8,10).
-
 cx(9,10).
 cx(9,11).
-
 cx(10,30).
-
 cx(11,12).
 cx(11,30).
-
 cx(12,13).
 cx(12,30).
-
 cx(13,14).
 cx(13,15).
 cx(13,16).
 cx(13,17).
 cx(13,30).
 cx(13,32).
-
 cx(14,30).
 cx(14,31).
 cx(14,32).
@@ -475,28 +478,23 @@ cx(14,33).
 cx(14,34).
 cx(14,52).
 cx(14,54).
-
 cx(15,16).
 cx(15,17).
 cx(15,33).
 cx(15,34).
 cx(15,35).
 cx(15,36).
-
 cx(16,17).
 cx(16,33).
 cx(16,36).
-
 cx(17,18).
 cx(17,36).
 cx(17,38).
-
 cx(18,19).
 cx(18,20).
 cx(18,36).
 cx(18,38).
 cx(18,39).
-
 cx(19,20).
 cx(19,39).
 cx(20,40).
@@ -504,30 +502,24 @@ cx(21,40).
 cx(21,41).
 cx(21,42).
 cx(21,23).
-
 cx(22,42).
 cx(22,23).
 cx(22,77).
-
 cx(23,77).
-
 cx(24,26).
 cx(24,25).
 cx(24,44).
 cx(24,43).
 cx(24,59).
-
 cx(25,26).
 cx(25,44).
 cx(25,43).
 cx(25,59).
-
 cx(26,28).
 cx(26,44).
 cx(26,79).
 cx(26,46).
 cx(26,27).
-
 cx(27,44).
 cx(27,79).
 cx(27,46).
@@ -536,13 +528,11 @@ cx(27,45).
 cx(27,47).
 cx(27,48).
 cx(27,29).
-
 cx(28,46).
 cx(28,45).
 cx(28,47).
 cx(28,48).
 cx(28,29).
-
 cx(29,46).
 cx(29,45).
 cx(29,47).
@@ -552,13 +542,11 @@ cx(29,49).
 cx(29,64).
 cx(29,66).
 cx(29,50).
-
 cx(30,49).
 cx(30,64).
 cx(30,66).
 cx(30,50).
 cx(30,32).
-
 cx(31,50).
 cx(31,32).
 cx(31,51).
@@ -566,18 +554,15 @@ cx(31,52).
 cx(31,32).
 cx(31,54).
 cx(31,33).
-
 cx(32,33).
 cx(32,52).
 cx(32,54).
-
 cx(33,52).
 cx(33,54).
 cx(33,36).
 cx(33,34).
 cx(33,35).
 cx(33,36).
-
 cx(34,54).
 cx(34,53).
 cx(34,68).
@@ -585,39 +570,31 @@ cx(34,55).
 cx(34,35).
 cx(34,36).
 cx(34,37).
-
 cx(35,36).
 cx(35,54).
 cx(35,53).
 cx(35,68).
 cx(35,55).
 cx(35,37).
-
 cx(36,38).
-
 cx(37,54).
 cx(37,53).
 cx(37,68).
 cx(37,55).
 cx(37,38).
 cx(37,39).
-
 cx(38,39).
-
 cx(39,56).
-
 cx(40,41).
 cx(40,57).
 cx(40,73).
 cx(40,58).
 cx(40,42).
 cx(40,41).
-
 cx(41,57).
 cx(41,73).
 cx(41,58).
 cx(41,42).
-
 cx(42,57).
 cx(42,73).
 cx(42,58).
