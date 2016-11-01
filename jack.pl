@@ -78,8 +78,8 @@ mueve_jack :-
         posicion_jack(P),
         linternas_que_quedan(LI),
         carromatos_que_quedan(CA),
-        findall(C,(cnx(P,C);cnx(C,P)),LC),
-        siguiente_cnx(LC,CX,LC2),
+        findall(C,(cx(P,C);cx(C,P)),LC),
+        siguiente_cx(LC,CX,LC2),
         LC is LC2,
         camino(P,CX,1,LI,CA,[],CAM),
         procesa_etapa(CAM),
@@ -239,25 +239,26 @@ end:-
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
 camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cllj(A,B).
+        M>0,LI>0,jack_pasa_por_cj(A,B).
 camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
+/* los carromatos se pillan si jack esta rodeado */
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+muy_cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cllj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
+        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 
 /* debug :cuando camino cambie, replicar anadiendo el Tail*/
 camino_dbg(A,B,M,_,_,_,[etapa(B,no,no)]):-
         M>0,jack_camina(A,B).
 camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cllj(A,B).
+        M>0,LI>0,jack_pasa_por_cj(A,B).
 camino_dbg(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
         M>1,CA>0,jack_va_en_carromato(A,W,B).
 
@@ -268,25 +269,25 @@ camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
         append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
 camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
-        M>0,LI>0,jack_pasa_por_cllj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
+        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI_N,CA,VIS_N,T).
 
 
 jack_camina(A,B):-
         conectados(A,B),
         \+poli_en(_,A,B).
-jack_pasa_por_cllj(A,B):-
-        cllj(A,B),\+jack_camina(A,B).
-jack_pasa_por_cllj(A,B):-
-        cllj(B,A),\+jack_camina(B,A).
+jack_pasa_por_cj(A,B):-
+        cj(A,B),\+jack_camina(A,B).
+jack_pasa_por_cj(A,B):-
+        cj(B,A),\+jack_camina(B,A).
 jack_va_en_carromato(A,B,C):-
         conectados(A,B),\+poli_en(_,A,B),
         conectados(B,C),\+poli_en(_,B,C).
 
 conectados(A,B):-
-        cnx(A,B).
+        cx(A,B).
 conectados(A,B):-
-        cnx(B,A).
+        cx(B,A).
 
 procesa_etapa([etapa(D,no,no)|_]):-
         movimientos_que_quedan(M),
@@ -299,7 +300,7 @@ procesa_etapa([etapa(D,yes,no)|_]):-
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         jack_en(D),
-        write("...... ya me he movido, por un cllj!!!.... bwahahahaha.."),nl,!.
+        write("...... ya me he movido, por un cj!!!.... bwahahahaha.."),nl,!.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
@@ -341,18 +342,18 @@ cerca_polis(P):-
         muy_cerca_polis(A),!.
 cerca_polis(P):-
         (poli_en(_,P,A);poli_en(_,A,P)),
-        (cnx(A,C);cnx(C,A)),
+        (cx(A,C);cx(C,A)),
         muy_cerca_polis(C),!.
 
 muy_cerca_polis(P):-
         poli_en(_,P,_);poli_en(_,_,P).
 
 max_loc(M):-
-        bagof(N,cnx(_,N),Ns),
+        bagof(N,cx(_,N),Ns),
         max_list(Ns,M).
 
-siguiente_cnx([],_,_):-fail.
-siguiente_cnx([H|T],H,T).
+siguiente_cx([],_,_):-fail.
+siguiente_cx([H|T],H,T).
 
 
 polis_inicio:- abolish(poli_en,3),abolish(poli_ha_jugado,2),
@@ -401,317 +402,317 @@ carromatos_por_noche(4,1).
 
 /* tablero */
 
-/* cnxes */
-cnx(1,2).
-cnx(1,24).
-cnx(1,6).
-cnx(1,26).
-cnx(1,28).
-cnx(1,8).
-cnx(1,9).
+/* cxes */
+cx(1,2).
+cx(1,24).
+cx(1,6).
+cx(1,26).
+cx(1,28).
+cx(1,8).
+cx(1,9).
 
-cnx(2,26).
-cnx(2,26).
-cnx(2,28).
-cnx(2,8).
-cnx(2,9).
-cnx(2,11).
-cnx(2,3).
+cx(2,26).
+cx(2,26).
+cx(2,28).
+cx(2,8).
+cx(2,9).
+cx(2,11).
+cx(2,3).
 
-cnx(3,9).
-cnx(3,11).
-cnx(3,4).
-cnx(3,5).
+cx(3,9).
+cx(3,11).
+cx(3,4).
+cx(3,5).
 
-cnx(4,11).
-cnx(4,12).
-cnx(4,5).
+cx(4,11).
+cx(4,12).
+cx(4,5).
 
-cnx(5,12).
-cnx(5,13).
-cnx(5,15).
-cnx(5,16).
-cnx(5,17).
+cx(5,12).
+cx(5,13).
+cx(5,15).
+cx(5,16).
+cx(5,17).
 
-cnx(6,24).
-cnx(6,25).
-cnx(6, 7).
-cnx(6,44).
-cnx(6,26).
+cx(6,24).
+cx(6,25).
+cx(6, 7).
+cx(6,44).
+cx(6,26).
 
-cnx(7,24).
-cnx(7,25).
-cnx(7,26).
-cnx(7,44).
+cx(7,24).
+cx(7,25).
+cx(7,26).
+cx(7,44).
 
-cnx(8,26).
-cnx(8,28).
-cnx(8, 9).
-cnx(8,10).
+cx(8,26).
+cx(8,28).
+cx(8, 9).
+cx(8,10).
 
-cnx(9,10).
-cnx(9,11).
+cx(9,10).
+cx(9,11).
 
-cnx(10,30).
+cx(10,30).
 
-cnx(11,12).
-cnx(11,30).
+cx(11,12).
+cx(11,30).
 
-cnx(12,13).
-cnx(12,30).
+cx(12,13).
+cx(12,30).
 
-cnx(13,14).
-cnx(13,15).
-cnx(13,16).
-cnx(13,17).
-cnx(13,30).
-cnx(13,32).
+cx(13,14).
+cx(13,15).
+cx(13,16).
+cx(13,17).
+cx(13,30).
+cx(13,32).
 
-cnx(14,30).
-cnx(14,31).
-cnx(14,32).
-cnx(14,33).
-cnx(14,34).
-cnx(14,52).
-cnx(14,54).
+cx(14,30).
+cx(14,31).
+cx(14,32).
+cx(14,33).
+cx(14,34).
+cx(14,52).
+cx(14,54).
 
-cnx(15,16).
-cnx(15,17).
-cnx(15,33).
-cnx(15,34).
-cnx(15,35).
-cnx(15,36).
+cx(15,16).
+cx(15,17).
+cx(15,33).
+cx(15,34).
+cx(15,35).
+cx(15,36).
 
-cnx(16,17).
-cnx(16,33).
-cnx(16,36).
+cx(16,17).
+cx(16,33).
+cx(16,36).
 
-cnx(17,18).
-cnx(17,36).
-cnx(17,38).
+cx(17,18).
+cx(17,36).
+cx(17,38).
 
-cnx(18,19).
-cnx(18,20).
-cnx(18,36).
-cnx(18,38).
-cnx(18,39).
+cx(18,19).
+cx(18,20).
+cx(18,36).
+cx(18,38).
+cx(18,39).
 
-cnx(19,20).
-cnx(19,39).
-cnx(20,40).
-cnx(21,40).
-cnx(21,41).
-cnx(21,42).
-cnx(21,23).
+cx(19,20).
+cx(19,39).
+cx(20,40).
+cx(21,40).
+cx(21,41).
+cx(21,42).
+cx(21,23).
 
-cnx(22,42).
-cnx(22,23).
-cnx(22,77).
+cx(22,42).
+cx(22,23).
+cx(22,77).
 
-cnx(23,77).
+cx(23,77).
 
-cnx(24,26).
-cnx(24,25).
-cnx(24,44).
-cnx(24,43).
-cnx(24,59).
+cx(24,26).
+cx(24,25).
+cx(24,44).
+cx(24,43).
+cx(24,59).
 
-cnx(25,26).
-cnx(25,44).
-cnx(25,43).
-cnx(25,59).
+cx(25,26).
+cx(25,44).
+cx(25,43).
+cx(25,59).
 
-cnx(26,28).
-cnx(26,44).
-cnx(26,79).
-cnx(26,46).
-cnx(26,27).
+cx(26,28).
+cx(26,44).
+cx(26,79).
+cx(26,46).
+cx(26,27).
 
-cnx(27,44).
-cnx(27,79).
-cnx(27,46).
-cnx(27,28).
-cnx(27,45).
-cnx(27,47).
-cnx(27,48).
-cnx(27,29).
+cx(27,44).
+cx(27,79).
+cx(27,46).
+cx(27,28).
+cx(27,45).
+cx(27,47).
+cx(27,48).
+cx(27,29).
 
-cnx(28,46).
-cnx(28,45).
-cnx(28,47).
-cnx(28,48).
-cnx(28,29).
+cx(28,46).
+cx(28,45).
+cx(28,47).
+cx(28,48).
+cx(28,29).
 
-cnx(29,46).
-cnx(29,45).
-cnx(29,47).
-cnx(29,48).
-cnx(29,30).
-cnx(29,49).
-cnx(29,64).
-cnx(29,66).
-cnx(29,50).
+cx(29,46).
+cx(29,45).
+cx(29,47).
+cx(29,48).
+cx(29,30).
+cx(29,49).
+cx(29,64).
+cx(29,66).
+cx(29,50).
 
-cnx(30,49).
-cnx(30,64).
-cnx(30,66).
-cnx(30,50).
-cnx(30,32).
+cx(30,49).
+cx(30,64).
+cx(30,66).
+cx(30,50).
+cx(30,32).
 
-cnx(31,50).
-cnx(31,32).
-cnx(31,51).
-cnx(31,52).
-cnx(31,32).
-cnx(31,54).
-cnx(31,33).
+cx(31,50).
+cx(31,32).
+cx(31,51).
+cx(31,52).
+cx(31,32).
+cx(31,54).
+cx(31,33).
 
-cnx(32,33).
-cnx(32,52).
-cnx(32,54).
+cx(32,33).
+cx(32,52).
+cx(32,54).
 
-cnx(33,52).
-cnx(33,54).
-cnx(33,36).
-cnx(33,34).
-cnx(33,35).
-cnx(33,36).
+cx(33,52).
+cx(33,54).
+cx(33,36).
+cx(33,34).
+cx(33,35).
+cx(33,36).
 
-cnx(34,54).
-cnx(34,53).
-cnx(34,68).
-cnx(34,55).
-cnx(34,35).
-cnx(34,36).
-cnx(34,37).
+cx(34,54).
+cx(34,53).
+cx(34,68).
+cx(34,55).
+cx(34,35).
+cx(34,36).
+cx(34,37).
 
-cnx(35,36).
-cnx(35,54).
-cnx(35,53).
-cnx(35,68).
-cnx(35,55).
-cnx(35,37).
+cx(35,36).
+cx(35,54).
+cx(35,53).
+cx(35,68).
+cx(35,55).
+cx(35,37).
 
-cnx(36,38).
+cx(36,38).
 
-cnx(37,54).
-cnx(37,53).
-cnx(37,68).
-cnx(37,55).
-cnx(37,38).
-cnx(37,39).
+cx(37,54).
+cx(37,53).
+cx(37,68).
+cx(37,55).
+cx(37,38).
+cx(37,39).
 
-cnx(38,39).
+cx(38,39).
 
-cnx(39,56).
+cx(39,56).
 
-cnx(40,41).
-cnx(40,57).
-cnx(40,73).
-cnx(40,58).
-cnx(40,42).
-cnx(40,41).
+cx(40,41).
+cx(40,57).
+cx(40,73).
+cx(40,58).
+cx(40,42).
+cx(40,41).
 
-cnx(41,57).
-cnx(41,73).
-cnx(41,58).
-cnx(41,42).
+cx(41,57).
+cx(41,73).
+cx(41,58).
+cx(41,42).
 
-cnx(42,57).
-cnx(42,73).
-cnx(42,58).
-cnx(43,44).
-cnx(43,59).
-cnx(44,59).
-cnx(44,46).
-cnx(44,79).
-cnx(45,48).
-cnx(45,47).
-cnx(45,61).
-cnx(46,79).
-cnx(46,47).
-cnx(46,48).
-cnx(47,61).
-cnx(47,48).
-cnx(48,49).
-cnx(48,64).
-cnx(48,63).
-cnx(48,62).
-cnx(49,62).
-cnx(49,63).
-cnx(49,64).
-cnx(49,50).
-cnx(49,66).
-cnx(50,64).
-cnx(50,66).
-cnx(50,52).
-cnx(50,51).
+cx(42,57).
+cx(42,73).
+cx(42,58).
+cx(43,44).
+cx(43,59).
+cx(44,59).
+cx(44,46).
+cx(44,79).
+cx(45,48).
+cx(45,47).
+cx(45,61).
+cx(46,79).
+cx(46,47).
+cx(46,48).
+cx(47,61).
+cx(47,48).
+cx(48,49).
+cx(48,64).
+cx(48,63).
+cx(48,62).
+cx(49,62).
+cx(49,63).
+cx(49,64).
+cx(49,50).
+cx(49,66).
+cx(50,64).
+cx(50,66).
+cx(50,52).
+cx(50,51).
 
 /* callejones */
-cllj(1,7).
-cllj(1,26).
-cllj(2,9).
-cllj(3,4).
-cllj(3,11).
-cllj(4,11).
-cllj(4,5).
-cllj(4,12).
-cllj(5,12).
-cllj(6,24).
-cllj(6,7).
-cllj(7,26).
-cllj(8,9).
-cllj(8,28).
-cllj(8,29).
-cllj(8,30).
-cllj(8,10).
-cllj(9,10).
-cllj(9,11).
-cllj(10,11).
-cllj(10,28).
-cllj(10,29).
-cllj(10,30).
-cllj(12,30).
-cllj(12,13).
-cllj(13,30).
-cllj(13,14).
-cllj(13,33).
-cllj(13,15).
-cllj(14,33).
-cllj(14,15).
-cllj(14,32).
-cllj(15,16).
-cllj(15,33).
-cllj(16,17).
-cllj(16,36).
-cllj(17,36).
-cllj(18,38).
-cllj(18,39).
-cllj(18,19).
-cllj(19,39).
-cllj(19,56).
-cllj(19,20).
-cllj(19,40).
-cllj(19,57).
-cllj(20,39).
-cllj(20,56).
-cllj(20,57).
-cllj(20,40).
-cllj(21,42).
-cllj(21,22).
-cllj(21,23).
-cllj(22,42).
-cllj(23,42).
-cllj(24,25).
-cllj(25,44).
-cllj(26,44).
-cllj(27,28).
-cllj(27,46).
-cllj(28,30).
-cllj(28,29).
-cllj(29,30).
-cllj(29,48).
-cllj(29,49).
-cllj(30,31).
-cllj(30,32).
-cllj(30,50).
+cj(1,7).
+cj(1,26).
+cj(2,9).
+cj(3,4).
+cj(3,11).
+cj(4,11).
+cj(4,5).
+cj(4,12).
+cj(5,12).
+cj(6,24).
+cj(6,7).
+cj(7,26).
+cj(8,9).
+cj(8,28).
+cj(8,29).
+cj(8,30).
+cj(8,10).
+cj(9,10).
+cj(9,11).
+cj(10,11).
+cj(10,28).
+cj(10,29).
+cj(10,30).
+cj(12,30).
+cj(12,13).
+cj(13,30).
+cj(13,14).
+cj(13,33).
+cj(13,15).
+cj(14,33).
+cj(14,15).
+cj(14,32).
+cj(15,16).
+cj(15,33).
+cj(16,17).
+cj(16,36).
+cj(17,36).
+cj(18,38).
+cj(18,39).
+cj(18,19).
+cj(19,39).
+cj(19,56).
+cj(19,20).
+cj(19,40).
+cj(19,57).
+cj(20,39).
+cj(20,56).
+cj(20,57).
+cj(20,40).
+cj(21,42).
+cj(21,22).
+cj(21,23).
+cj(22,42).
+cj(23,42).
+cj(24,25).
+cj(25,44).
+cj(26,44).
+cj(27,28).
+cj(27,46).
+cj(28,30).
+cj(28,29).
+cj(29,30).
+cj(29,48).
+cj(29,49).
+cj(30,31).
+cj(30,32).
+cj(30,50).
