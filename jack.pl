@@ -25,7 +25,7 @@ otra_noche_mas :-
         abolish(linternas_que_quedan,1),linternas_por_noche(N2,LI),assertz(linternas_que_quedan(LI)),
         abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
         abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
-        abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),
+        abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),abolish(rastro,1),assertz(rastro(0)),
         write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl,
         file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID).
 
@@ -64,11 +64,11 @@ mueve_jack :-
         M>0,
         linternas_que_quedan(LI),
         carromatos_que_quedan(CA),
-        camino(P,G,M,LI,CA,[],CAM),
+        camino(P,G,M,LI,CA,[],CAM),!,
         procesa_etapa(CAM),
         avisa_si_en_guarida,
         avisa_si_jack_escapa,
-        polis_pueden_jugar,!.
+        polis_pueden_jugar.
 /* si no hay un camino , intentar moverse a alguna de las posiciones
  * adyacentes y esperar a que los policias se muevan y despejen el paso */
 mueve_jack :-
@@ -76,16 +76,18 @@ mueve_jack :-
         \+ jack_en_guarida,
         write("mmhh.... esta chungo...!!!"),nl,
         posicion_jack(P),
+        movimientos_que_quedan(M),
+        M>0,
         linternas_que_quedan(LI),
         carromatos_que_quedan(CA),
         findall(C,(cx(P,C);cx(C,P)),LC),
         siguiente_cx(LC,CX,LC2),
         LC is LC2,
-        camino(P,CX,1,LI,CA,[],CAM),
+        camino(P,CX,1,LI,CA,[],CAM),!,
         procesa_etapa(CAM),
         avisa_si_en_guarida,
         avisa_si_jack_escapa,
-        polis_pueden_jugar,!.
+        polis_pueden_jugar.
 mueve_jack :-
         jack_libre(yes),
         \+ jack_en_guarida,
@@ -178,7 +180,7 @@ avisa_si_en_guarida :-
         jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl.
 avisa_si_en_guarida.
 avisa_si_jack_escapa :-
-        jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl,end,
+        jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl,end.
 avisa_si_jack_escapa.
 
 
@@ -245,48 +247,17 @@ camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
 
 /* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
-        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W),\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
-        append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
         M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
         M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
         M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 
 /* debug :cuando camino_dbg cambie, replicar anadiendo el Tail*/
-camino_dbg(A,B,M,_,_,_,[etapa(B,no,no)]):-
-        M>0,jack_camina(A,B).
-camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cj(A,B).
-camino_dbg(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,B).
-
-/* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
-camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
-        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,\+cerca_polis(W2),M2 is (M-2),CA_N is (CA-1),
-        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
-camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
-        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
-        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
-
-camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),
-        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
-camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
-        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,\+muy_cerca_polis(W),M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI_N,CA,VIS_N,T).
-
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -315,7 +286,7 @@ procesa_etapa([etapa(D,yes,no)|_]):-
         retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         jack_en(D),
-        write("...... ya me he movido, por un cj!!!.... bwahahahaha.."),nl,!.
+        write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl,!.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
@@ -352,6 +323,7 @@ examina_pista(P,C) :-
 examina_pista(P,C) :-
         jack_ha_estado(C),
         write(".... vaaaale, si he estado ahhi!!!!!"),nl,
+        assertz(rastro(C)),
         retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
 examina_pista(_,_) :- write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
 
@@ -379,12 +351,16 @@ polis_pueden_jugar:-
                abolish(poli_ha_jugado,2),forall(poli(X),assertz(poli_ha_jugado(X,no))).
 
 st:-
-        foreach(
-                (poli(P),poli_en(P,C1,C2),poli_ha_jugado(P,YN)),
-                (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)),
+        noche(N),write("noche:"),write(N),nl,
         movimientos_que_quedan(M),write("movimientos:"),write(M),nl,
         linternas_que_quedan(L),write("linternas:"),write(L),nl,
-        carromatos_que_quedan(C),write("carromatos:"),write(C),nl.
+        carromatos_que_quedan(C),write("carromatos:"),write(C),nl,
+        foreach(
+                (rastro(C)),
+                (write("rastro:"),write(C),nl)),
+        foreach(
+                (poli(P),poli_en(P,C1,C2),poli_ha_jugado(P,YN)),
+                (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)).
 
 /* Configuracion del juego */
 poli(r).
@@ -396,12 +372,8 @@ poli(m).
 /* posiciones de salida de las pes */
 salida_pe(1,3).
 salida_pe(2,27).
-salida_pe(3,149).
 salida_pe(4,65).
-salida_pe(5,84).
 salida_pe(6,21).
-salida_pe(7,158).
-salida_pe(8,147).
 
 /* descripcion del etapa */
 
@@ -624,6 +596,45 @@ cx(50,64).
 cx(50,66).
 cx(50,52).
 cx(50,51).
+cx(51,64).
+cx(51,66).
+cx(55,65).
+cx(51,84).
+cx(51,67).
+cx(51,52).
+cx(52,67).
+cx(52,53).
+cx(52,54).
+cx(53,67).
+cx(53,54).
+cx(53,68).
+cx(53,55).
+cx(54,68).
+cx(54,55).
+cx(55,68).
+cx(55,86).
+cx(55,56).
+cx(56,68).
+cx(56,86).
+cx(56,57).
+cx(57,73).
+cx(57,58).
+cx(57,76).
+cx(57,75).
+cx(57,74).
+cx(58,73).
+cx(58,76).
+cx(58,75).
+cx(58,74).
+cx(59,60).
+cx(59,95).
+cx(59,96).
+cx(59,78).
+cx(60,95).
+cx(60,96).
+cx(60,78).
+cx(60,79).
+
 
 /* callejones */
 cj(1,7).
@@ -693,3 +704,25 @@ cj(29,49).
 cj(30,31).
 cj(30,32).
 cj(30,50).
+cj(30,50).
+cj(31,32).
+cj(31,50).
+cj(31,52).
+cj(32,50).
+cj(33,34).
+cj(33,54).
+cj(34,35).
+cj(34,54).
+cj(34,35).
+cj(35,36).
+cj(35,37).
+cj(35,38).
+cj(36,37).
+cj(36,38).
+cj(38,39).
+cj(39,55).
+cj(39,56).
+cj(39,57).
+cj(40,56).
+cj(40,57).
+cj(40,41).
