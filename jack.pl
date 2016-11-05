@@ -20,15 +20,20 @@ elige_guarida :-
 
 otra_noche_mas :-
         jack_libre(yes),
-        noche(N),retract(noche(_)),(N2 is N+1),assertz(noche(N2)),
+        noche(N),retractall(noche(_)),(N2 is N+1),assertz(noche(N2)),
         abolish(pe,2),assert(pe(1,0)),assert(pe(2,0)),assert(pe(3,0)),assert(pe(4,0)),assert(pe(5,0)),assert(pe(6,0)),assert(pe(7,0)),
         abolish(linternas_que_quedan,1),linternas_por_noche(N2,LI),assertz(linternas_que_quedan(LI)),
         abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
         abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
         abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),abolish(rastro,1),assertz(rastro(0)),
         write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl,
-        file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID).
+        mata(N2),
+        file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID),!.
 
+mata(N):-
+        N\=3,mata_una.
+mata(N):-
+        N=3,mata_dos.
 mata_una :-
         jack_mata_una(C),
         write(" .... Jack mata en.. "),write(C),write(", ... bwahahahaha"),nl,
@@ -54,7 +59,7 @@ mueve_jack :-
         \+ jack_en_guarida,
         movimientos_que_quedan(0),
         write("He agotado mi limite de movimientos me habeis pilladooooooooo!!!"),nl,end,
-        retract(jack_libre(yes)),assertz(jack_libre(no)),!.
+        retractall(jack_libre(yes)),assertz(jack_libre(no)),!.
 mueve_jack :-
         jack_libre(yes),
         \+ jack_en_guarida,
@@ -92,7 +97,7 @@ mueve_jack :-
         jack_libre(yes),
         \+ jack_en_guarida,
         write("No me puedo moveeeer, me habeis pilladoooooooooo!!!"),nl,end,
-        retract(jack_libre(yes)),assertz(jack_libre(no)),!.
+        retractall(jack_libre(yes)),assertz(jack_libre(no)),!.
 
 
 /* pon poli */
@@ -100,7 +105,7 @@ pp:-
         jack_libre(yes),
         write("poli:"),read(P),
         poli(P),
-        retract(poli_en(P,_,_)),
+        retractall(poli_en(P,_,_)),
         repeat,
         lee_poli_en(P).
 
@@ -121,11 +126,11 @@ arresto(_,A):-
         posicion_jack(C),
         A = C,
         write("... aaarggghhhh me habeis pilladooooooooooooooooo......"),nl,end,
-        retract(jack_libre(yes)),
+        retractall(jack_libre(yes)),
         assertz(jack_libre(no)),!.
 arresto(P,_):- 
         write(" .... mmmmmmmhhh  no!! :D"),nl,
-        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
+        retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
 
 pista:-
         write("poli:"),read(P),
@@ -151,7 +156,8 @@ init :-
         abolish(jack_ha_estado,1),
         open('jack.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),write(ID,"jack!"),nl(ID),
         polis_inicio,
-        assertz(noche(0)).
+        assertz(noche(0)),
+        elige_guarida.
 
 puede_ser_guarida(G):-
         \+salida_pe(_,G).
@@ -247,16 +253,25 @@ camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
 
 /* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
-        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+cerca_polis(W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),cerca_polis(W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
         append([A,W],VIS,VIS_N),camino(W2,B,M2,LI,CA_N,VIS_N,_).
 
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
-        M>0,jack_camina(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
+        M>0,jack_camina(A,W),\+cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
-camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,no,no)]):-
+        M>0,jack_camina(A,W),cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI,CA,VIS_N,_).
 
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_cj(A,W),\+cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
+camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
+        M>0,LI>0,jack_pasa_por_cj(A,W),cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
 /* debug :cuando camino_dbg cambie, replicar anadiendo el Tail*/
 
 jack_camina(A,B):-
@@ -277,28 +292,28 @@ poli_enmedio(A,B):-
 
 procesa_etapa([etapa(D,no,no)|_]):-
         movimientos_que_quedan(M),
-        retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
+        retractall(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
         jack_en(D),
         write("...... ya me he movido.... bwahahahaha"),nl,!.
 procesa_etapa([etapa(D,yes,no)|_]):-
         movimientos_que_quedan(M),
         linternas_que_quedan(LI),
-        retract(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
-        retract(linternas_que_quedan(_)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
+        retractall(movimientos_que_quedan(_)),M_N is M-1,assertz(movimientos_que_quedan(M_N)),
+        retractall(linternas_que_quedan(_)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         jack_en(D),
         write("...... ya me he movido, por un callejon!!!.... bwahahahaha.."),nl,!.
 procesa_etapa([etapa(I,no,yes),etapa(D,no,yes)|_]):-
         movimientos_que_quedan(M),
         carromatos_que_quedan(CA),
-        retract(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
-        retract(carromatos_que_quedan(_)),CA_N is CA-1,assertz(carromatos_que_quedan(CA_N)),
+        retractall(movimientos_que_quedan(_)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
+        retractall(carromatos_que_quedan(_)),CA_N is CA-1,assertz(carromatos_que_quedan(CA_N)),
         jack_en(I),
         jack_en(D),
         write("...... ya me he movido, usando un carromato!!!.... bwahahahaha.."),nl,!.
 
 jack_en(P):-
         assertz(jack_ha_estado(P)),
-        retract(posicion_jack(_)),assertz(posicion_jack(P)),
+        retractall(posicion_jack(_)),assertz(posicion_jack(P)),
         file_id(ID),
         movimientos_que_quedan(M),linternas_que_quedan(L),carromatos_que_quedan(C),
         write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID),!.
@@ -315,17 +330,21 @@ pon_poli(_,0,_):-!.
 pon_poli(P,X,Y):-
         assertz(poli_en(P,X,Y)),fail.
 
-examina_pista(P,0) :-
-        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
+examina_pista(P,0):-
+        retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)).
 examina_pista(P,C) :-
          \+(poli_en(P,C,_);poli_en(P,_,C)),
-        write(".... listooooo, ahi no puedes mirar! :D"),nl.
+        write(".... listooooo, ahi no puedes mirar! :D"),nl,fail.
 examina_pista(P,C) :-
+        (poli_en(P,C,_);poli_en(P,_,C)),
         jack_ha_estado(C),
         write(".... vaaaale, si he estado ahhi!!!!!"),nl,
-        assertz(rastro(C)),
-        retract(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),!.
-examina_pista(_,_) :- write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
+        retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),
+        assertz(rastro(C)).
+examina_pista(P,C) :- 
+         (poli_en(P,C,_);poli_en(P,_,C)),
+         \+jack_ha_estado(C),
+         write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
 
 cerca_polis(P):-
         muy_cerca_polis(P),!.
@@ -372,7 +391,6 @@ poli(m).
 /* posiciones de salida de las pes */
 salida_pe(1,3).
 salida_pe(2,27).
-salida_pe(4,65).
 salida_pe(6,21).
 
 /* descripcion del etapa */
@@ -598,7 +616,6 @@ cx(50,52).
 cx(50,51).
 cx(51,64).
 cx(51,66).
-cx(55,65).
 cx(51,84).
 cx(51,67).
 cx(51,52).
