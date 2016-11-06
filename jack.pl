@@ -245,11 +245,11 @@ end:-
 
 /* no queremos que llegue en la primera etapa, daria muchas pistas */
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
-        M>0,M<11,jack_camina(A,B).
+        M>0,noche(N),(N=4;M<15),jack_camina(A,B).
 camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
-        M>0,M<11,LI>0,jack_pasa_por_cj(A,B).
+        M>0,noche(N),(N=4;M<15),LI>0,jack_pasa_por_cj(A,B).
 camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
-        M>1,M<11,CA>0,jack_va_en_carromato(A,W,B).
+        M>1,noche(N),(N=4;M<15),CA>0,jack_va_en_carromato(A,W,B).
 
 /* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
@@ -272,7 +272,36 @@ camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
 camino(A,B,M,LI,CA,VIS,[etapa(W,yes,no)]):-
         M>0,LI>0,jack_pasa_por_cj(A,W),cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,CA,VIS_N,_).
+
 /* debug :cuando camino_dbg cambie, replicar anadiendo el Tail*/
+camino_dbg(A,B,M,_,_,_,[etapa(B,no,no)]):-
+        M>0,noche(N),(N<4;M<15),jack_camina(A,B).
+camino_dbg(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
+        M>0,noche(N),(N<4;M<15),LI>0,jack_pasa_por_cj(A,B).
+camino_dbg(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
+        M>1,noche(N),(N<4;M<15),CA>0,jack_va_en_carromato(A,W,B).
+
+/* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),\+cerca_polis(W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)|T]):-
+        M>1,CA>0,cerca_polis(A),jack_va_en_carromato(A,W,W2),cerca_polis(W2),\+member(B,VIS),\+member(W,VIS),\+member(W2,VIS),\+ W=B,\+ W2=B,\+W2=A,M2 is (M-2),CA_N is (CA-1),
+        append([A,W],VIS,VIS_N),camino_dbg(W2,B,M2,LI,CA_N,VIS_N,T).
+
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
+        M>0,jack_camina(A,W),\+cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,no,no)|T]):-
+        M>0,jack_camina(A,W),cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI,CA,VIS_N,T).
+
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
+        M>0,LI>0,jack_pasa_por_cj(A,W),\+cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI_N,CA,VIS_N,T).
+camino_dbg(A,B,M,LI,CA,VIS,[etapa(W,yes,no)|T]):-
+        M>0,LI>0,jack_pasa_por_cj(A,W),cerca_polis(W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        append([A],VIS,VIS_N),camino_dbg(W,B,M2,LI_N,CA,VIS_N,T).
 
 jack_camina(A,B):-
         conectados(A,B),
