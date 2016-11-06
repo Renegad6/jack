@@ -21,14 +21,14 @@ elige_guarida :-
 otra_noche_mas :-
         jack_libre(yes),
         noche(N),retractall(noche(_)),(N2 is N+1),assertz(noche(N2)),
+        file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID),
         abolish(pe,2),assert(pe(1,0)),assert(pe(2,0)),assert(pe(3,0)),assert(pe(4,0)),assert(pe(5,0)),assert(pe(6,0)),assert(pe(7,0)),
         abolish(linternas_que_quedan,1),linternas_por_noche(N2,LI),assertz(linternas_que_quedan(LI)),
         abolish(carromatos_que_quedan,1),carromatos_por_noche(N2,CARR),assertz(carromatos_que_quedan(CARR)),
         abolish(movimientos_que_quedan,1),assertz(movimientos_que_quedan(15)),
         abolish(posicion_jack,1),abolish(jack_ha_estado,1),assertz(posicion_jack(0)),assertz(jack_ha_estado(0)),abolish(rastro,1),assertz(rastro(0)),
         write(" .... comienza noche "),write(N2),write(",bwahahahaha...."),nl,
-        mata(N2),
-        file_id(ID),write(ID,"noche:"),write(ID,N2),nl(ID),!.
+        mata(N2),!.
 
 mata(N):-
         N\=3,mata_una.
@@ -106,7 +106,6 @@ pp:-
         write("poli:"),read(P),
         poli(P),
         retractall(poli_en(P,_,_)),
-        repeat,
         lee_poli_en(P).
 
 arresto:-
@@ -183,7 +182,7 @@ decide(1,_,CC,CC).
 jack_en_guarida :- posicion_jack(C),guarida(C).
 
 avisa_si_en_guarida :-
-        jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl.
+        jack_en_guarida,write("Llegue a mi guarida, bwaahhahahahaaha"),nl,!.
 avisa_si_en_guarida.
 avisa_si_jack_escapa :-
         jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl,end.
@@ -244,12 +243,13 @@ end:-
  
 /* movimiento */
 
+/* no queremos que llegue en la primera etapa, daria muchas pistas */
 camino(A,B,M,_,_,_,[etapa(B,no,no)]):-
-        M>0,jack_camina(A,B).
+        M>0,M<11,jack_camina(A,B).
 camino(A,B,M,LI,_,_,[etapa(B,yes,no)]):-
-        M>0,LI>0,jack_pasa_por_cj(A,B).
+        M>0,M<11,LI>0,jack_pasa_por_cj(A,B).
 camino(A,B,M,_,CA,_,[etapa(W,no,yes),etapa(B,no,yes)]):-
-        M>1,CA>0,jack_va_en_carromato(A,W,B).
+        M>1,M<11,CA>0,jack_va_en_carromato(A,W,B).
 
 /* los carromatos se pillan si jack esta rodeado (primero intentara ir a un sitio donde no haya polis, sino pues a uno donde lo haya) */
 camino(A,B,M,LI,CA,VIS,[etapa(W,no,yes),etapa(W2,no,yes)]):-
@@ -319,16 +319,12 @@ jack_en(P):-
         write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID),!.
         
 lee_poli_en(P):-
-        write("poli:"),write(P),nl,
-        write("entre:"),
-        read(C1),
-        write("y:"),
-        read(C2),
-        pon_poli(P,C1,C2).
-
-pon_poli(_,0,_):-!.
-pon_poli(P,X,Y):-
-        assertz(poli_en(P,X,Y)),fail.
+        write("entre(ej '20 21 40 41'. ):"),
+        read(S),
+        tokenize_atom(S,L),
+        foreach(member(C,L),
+                foreach((member(C2,L),\+C=C2,\+(poli_en(P,C,C2);poli_en(P,C2,C)),conectados(C,C2)),
+                        (assertz(poli_en(P,C,C2)),write("poli en:"),write(C),write("/"),write(C2),nl))).
 
 examina_pista(P,0):-
         retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)).
@@ -342,7 +338,7 @@ examina_pista(P,C) :-
         retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)),
         assertz(rastro(C)).
 examina_pista(P,C) :- 
-         (poli_en(P,C,_);poli_en(P,_,C)),
+         (poli_en(P,C,_);poli_en(P,_,C)),!,
          \+jack_ha_estado(C),
          write(" .... mmmmmmmhhh  no!! :D"),nl,fail.
 
@@ -375,8 +371,8 @@ st:-
         linternas_que_quedan(L),write("linternas:"),write(L),nl,
         carromatos_que_quedan(C),write("carromatos:"),write(C),nl,
         foreach(
-                (rastro(C)),
-                (write("rastro:"),write(C),nl)),
+                rastro(C),
+                (write("rastro:"),writeln(C))),
         foreach(
                 (poli(P),poli_en(P,C1,C2),poli_ha_jugado(P,YN)),
                 (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)).
@@ -391,6 +387,7 @@ poli(m).
 /* posiciones de salida de las pes */
 salida_pe(1,3).
 salida_pe(2,27).
+salida_pe(3,65).
 salida_pe(6,21).
 
 /* descripcion del etapa */
@@ -614,7 +611,7 @@ cx(50,64).
 cx(50,66).
 cx(50,52).
 cx(50,51).
-cx(51,64).
+cx(51,65).
 cx(51,66).
 cx(51,84).
 cx(51,67).
