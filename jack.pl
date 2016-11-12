@@ -231,16 +231,19 @@ movimiento(A,G,M):-
         noche(N),
         C>0,
         M>1,
-        jack_va_en_carromato(A,W,B),
-        \+polis_cerca(B),
-        M_N is M-2,
-        C_N is C-1,
-        puedo_llegar(A,B,G,M_N,N,L),!,
+        findall(X-W-B,
+                (numlist(1,M,NL),member(X,NL),
+                 jack_va_en_carromato(A,W,B),
+                 \+polis_cerca(B),
+                 puedo_llegar(A,B,G,X,N,L)),
+                 L),
+writeln(L),
+        minim(L,_-WW-BB),
         writeln(".... uso un carromato!! bwahahahaha"),
-        retract(carromatos_que_quedan(C)),assertz(carromatos_que_quedan(C_N)),
-        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(W),
-        jack_en(B).
+        retract(carromatos_que_quedan(C)),C_N is C-1,assertz(carromatos_que_quedan(C_N)),
+        retract(movimientos_que_quedan(M)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
+        jack_en(WW),
+        jack_en(BB).
 movimiento(A,G,M):-
         polis_cerca(A),
         linternas_que_quedan(L),
@@ -300,7 +303,8 @@ jack_pasa_por_cj(A,B):-
         hay_callejon(A,B).
 jack_va_en_carromato(A,B,C):-
         conectados(A,B),\+poli_enmedio(A,B),
-        conectados(B,C),\+poli_enmedio(A,B).
+        conectados(B,C),\+poli_enmedio(A,B),
+        \+jack_camina(A,C).
 
 conectados(A,B):-
         (cx(A,B);cx(B,A)).
@@ -374,6 +378,11 @@ st:-
         foreach(
                 (poli(P),poli_en(P,C1,C2),poli_ha_jugado(P,YN)),
                 (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)).
+
+minim([],_):-fail.
+minim([A-B-C],A-B-C).
+minim([A-B-C|T],A-B-C):-minim(T,D-_-_),(A=<D),!.
+minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 
 /* Configuracion del juego */
 poli(r).
