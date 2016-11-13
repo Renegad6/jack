@@ -142,6 +142,7 @@ jack_mata_una(C) :-
         salida_pe(P,C),
         \+crime_scene(C),
         \+polis_cerca(C),
+        assertz(crime_scene(C)),
         file_id(ID),write(ID,"mato en:"),write(ID,C),nl(ID).
 
 matanza(P) :-
@@ -227,60 +228,83 @@ movimiento(A):-
 movimiento(A,G,M):-
         polis_cerca(A),
         carromatos_que_quedan(C),
-        linternas_que_quedan(L),
-        noche(N),
         C>0,
-        M>1,
+        M>2,
+        M_N is M-2,
         findall(X-W-B,
-                (numlist(1,M,NL),member(X,NL),
-                 jack_va_en_carromato(A,W,B),
+                (jack_va_en_carromato(A,W,B),
                  \+polis_cerca(B),
-                 puedo_llegar(A,B,G,X,N,L)),
+                 encuentra_primero(M_N,A,B,G,X)),
                  L),
-writeln(L),
         minim(L,_-WW-BB),
         writeln(".... uso un carromato!! bwahahahaha"),
         retract(carromatos_que_quedan(C)),C_N is C-1,assertz(carromatos_que_quedan(C_N)),
-        retract(movimientos_que_quedan(M)),M_N is M-2,assertz(movimientos_que_quedan(M_N)),
+        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(WW),
         jack_en(BB).
 movimiento(A,G,M):-
-        polis_cerca(A),
-        linternas_que_quedan(L),
-        noche(N),
-        L>0,
-        jack_pasa_por_cj(A,B),
-        \+polis_cerca(B),
-        L_N is L-1,
+        M>1,
         M_N is M-1,
-        puedo_llegar(A,B,G,M_N,N,L_N),!,
+        findall(X-B-B,
+                (jack_camina(A,B),
+                 \+polis_cerca(B),
+                 encuentra_primero(M_N,A,B,G,X)),
+                 L),
+        minim(L,_-_-BB),
+        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
+        jack_en(BB).
+movimiento(A,G,M):-
+        M>1,
+        linternas_que_quedan(LI),
+        LI>0,
+        M_N is M-1,
+        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
+        findall(X-B-B,
+                (jack_pasa_por_cj(A,B),
+                 \+polis_cerca(A,B),
+                 encuentra_primero(M_N,A,B,G,X)),
+                 L),
+        retract(linternas_que_quedan(LI_N)),assertz(linternas_que_quedan(LI)),
+        minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
-        retract(linternas_que_quedan(L)),assertz(linternas_que_quedan(L_N)),
-        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
+        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
+        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
+        jack_en(BB).
 movimiento(A,G,M):-
-        jack_camina(A,B),
-        \+polis_cerca(B),
+        M>1,
+        linternas_que_quedan(LI),
+        LI>0,
         M_N is M-1,
-        linternas_que_quedan(L),
-        noche(N),
-        puedo_llegar(A,B,G,M_N,N,L),!,
-        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
+        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
+        findall(X-B-B,
+                (jack_pasa_por_cj(A,B),
+                 encuentra_primero(M_N,A,B,G,X)),
+                 L),
+        retract(linternas_que_quedan(LI_N)),assertz(linternas_que_quedan(LI)),
+        minim(L,_-_-BB),
+        writeln(".... uso una linterna!! bwahahahaha"),
+        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
+        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
+        jack_en(BB).
 movimiento(A,G,M):-
-        jack_camina(A,B),
+        M>1,
         M_N is M-1,
-        linternas_que_quedan(L),
-        noche(N),
-        puedo_llegar(A,B,G,M_N,N,L),!,
+        findall(X-B-B,
+                (jack_camina(A,B),
+                 \+polis_cerca(B),
+                 encuentra_primero(M_N,A,B,G,X)),
+                 L),
+        minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
+        jack_en(BB).
 
-puedo_llegar(A,B,G,M,N,_):-
+puedo_llegar(A,B,G,M):-
+        noche(N),
         (N=4;M<10;polis_cerca(A)),
         B=G.
-puedo_llegar(_,B,G,M,_,L):-
+puedo_llegar(_,B,G,M):-
         \+B=G,
+        linternas_que_quedan(L),
         camino(B,G,M,L,[]).
 
 camino(A,B,M,_,_):-
@@ -377,12 +401,22 @@ st:-
                 (write("rastro:"),writeln(C))),
         foreach(
                 (poli(P),poli_en(P,C1,C2),poli_ha_jugado(P,YN)),
-                (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)).
-
+                (write("poli:"),write(P),write(",jugado:"),write(YN),write(",entre:"),write(C1),write(",y:"),write(C2),nl)),
+        foreach(
+                crime_scene(C),
+                (write("crime_scene:"),writeln(C))).
 minim([],_):-fail.
 minim([A-B-C],A-B-C).
 minim([A-B-C|T],A-B-C):-minim(T,D-_-_),(A=<D),!.
 minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
+
+encuentra_primero(M,A,B,G,H):-
+        numlist(1,M,NL),
+        encuentra_primero_l(NL,A,B,G,H),!.
+encuentra_primero_l([H|_],A,B,G,H):-
+        puedo_llegar(A,B,G,H),!.
+encuentra_primero_l([_|T],A,B,G,HH):-
+        encuentra_primero_l(T,A,B,G,HH). 
 
 /* Configuracion del juego */
 poli(r).
@@ -395,6 +429,7 @@ poli(m).
 salida_pe(1,3).
 salida_pe(2,27).
 salida_pe(3,65).
+salida_pe(4,84).
 salida_pe(6,21).
 
 /* descripcion del etapa */
