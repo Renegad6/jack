@@ -136,21 +136,26 @@ init :-
 puede_ser_guarida(G):-
         \+salida_pe(_,G).
 
+jack_mata_una(H) :-
+        findall(CC,
+                (salida_pe(_,CC),\+crime_scene(CC),\+polis_cerca(CC),random(0,2,1)),L),
+        \+length(L,0),
+        L = [H|_],
+        assertz(crime_scene(H)),
+        file_id(ID),write(ID,"mato en:"),write(ID,H),nl(ID),!.
 jack_mata_una(C) :-
         repeat,
-        random(1,8,P),
-        salida_pe(P,C),
-        \+crime_scene(C),
-        \+polis_cerca(C),
+        random(1,9,P),
+        salida_pe(P,C),\+crime_scene(C),
         assertz(crime_scene(C)),
-        file_id(ID),write(ID,"mato en:"),write(ID,C),nl(ID).
+        file_id(ID),write(ID,"...mato en:"),write(ID,C),nl(ID),!.
 
 matanza(P) :-
         salida_pe(P,C),
         file_id(ID),write(ID,"mato por mandato en:"),write(ID,C),nl(ID).
 
 elige_donde_jack(C,CC,RC) :-
-        random(0,1,X),
+        random(0,2,X),
         decide(X,C,CC,RC).
 decide(0,C,_,C).
 decide(1,_,CC,CC).
@@ -705,8 +710,12 @@ cx(63,65).
 cx(63,83).
 cx(64,66).
 cx(65,82).
+cx(65,83).
+cx(65,84).
 cx(65,67).
+cx(65,66).
 cx(66,84).
+cx(66,67).
 cx(67,84).
 cx(68,86).
 cx(68,69).
@@ -758,6 +767,80 @@ cx(78,96).
 cx(78,79).
 cx(78,97).
 cx(78,80).
+cx(79,97).
+cx(79,80).
+cx(80,97).
+cx(80,81).
+cx(80,82).
+cx(81,118).
+cx(82,83).
+cx(83,120).
+cx(83,99).
+cx(84,99).
+cx(84,100).
+cx(84,85).
+cx(84,86).
+cx(85,99).
+cx(85,100).
+cx(85,124).
+cx(85,126).
+cx(85,101).
+cx(85,86).
+cx(86,99).
+cx(86,100).
+cx(86,102).
+cx(87,104).
+cx(87,129).
+cx(88,104).
+cx(88,105).
+cx(88,130).
+cx(89,90).
+cx(89,105).
+cx(89,106).
+cx(89,107).
+cx(89,91).
+cx(89,90).
+cx(90,91).
+cx(90,92).
+cx(90,93).
+cx(90,94).
+cx(91,105).
+cx(91,106).
+cx(91,107).
+cx(91,92).
+cx(91,93).
+cx(91,94).
+cx(92,107).
+cx(92,108).
+cx(92,132).
+cx(92,110).
+cx(92,93).
+cx(92,94).
+cx(93,94).
+cx(94,109).
+cx(95,112).
+cx(95,113).
+cx(95,114).
+cx(95,96).
+cx(96,114).
+cx(96,115).
+cx(96,116).
+cx(96,97).
+cx(97,115).
+cx(97,116).
+cx(97,117).
+cx(98,118).
+cx(98,119).
+cx(98,120).
+cx(99,120).
+cx(99,100).
+cx(100,122).
+cx(100,123).
+cx(100,140).
+cx(100,141).
+cx(100,155).
+cx(100,125).
+cx(100,124).
 
 /* callejones */
 cj(1,7).
@@ -853,3 +936,23 @@ cj(41,42).
 cj(42,58).
 cj(42,76).
 cj(42,77).
+cj(44,59).
+cj(44,60).
+cj(44,79).
+cj(45,46).
+cj(45,79).
+cj(45,61).
+cj(45,47).
+cj(46,79).
+cj(46,80).
+cj(46,62).
+cj(46,48).
+cj(47,61).
+cj(47,79).
+cj(47,80).
+cj(47,48).
+cj(47,62).
+cj(48,62).
+cj(48,61).
+cj(48,79).
+cj(48,80).
