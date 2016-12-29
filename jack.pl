@@ -13,7 +13,7 @@ elige_guarida :-
         repeat,
         random(1,M,G),
         puede_ser_guarida(G),
-        abolish(guarida,1),assertz(guarida(G)),
+        assertz(guarida(G)),
         file_id(ID),
         write(ID,"guarida:"),write(ID,G),nl(ID),
         write(" .... Ya tengo mi guarida... bwahahahaha...."),nl,!.
@@ -132,6 +132,7 @@ init :-
         polis_inicio,
         assertz(noche(0)),
         carga_tablero,
+        carga_callejones,
         elige_guarida.
 
 puede_ser_guarida(G):-
@@ -427,22 +428,35 @@ encuentra_primero_l([_|T],A,B,G,HH):-
 /* Configuracion del juego */
 carga_tablero:-
     writeln('Cargando tablero...'),
-    open('jack_cnx.txt',read,ID,[type(text),buffer(false)]),
+    open('jack_cnx.txt',read,IDT,[type(text),buffer(false)]),
     repeat,             % try again forever
-    read(ID,X),
-    write("->:"),write(X),nl,
+    read(IDT,X),
+    add_cx(X),
     X == end_of_file,   % fail (backtrack) if not end of 
     !,
-    close(ID).
+    close(IDT).
+carga_callejones:-
+    writeln('Cargando callejones...'),
+    open('jack_cj.txt',read,IDT,[type(text),buffer(false)]),
+    repeat,             % try again forever
+    read(IDT,X),
+    add_cj(X),
+    X == end_of_file,   % fail (backtrack) if not end of 
+    !,
+    close(IDT).
 
-echo_file(F) :-
-  open(F, read, ID),  % open a stream
-  open('jack.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),write(ID,"jack!"),nl(ID),
-  repeat,             % try again forever
-  read(ID, X),        % read from the stream
-  write(X), nl,       % write to current output stream
-  X == end_of_file,   % fail (backtrack) if not end of file
-  close(ID).          % close the file
+add_cx(X):-
+        X==end_of_file.
+add_cx(X):-
+    \+ X==end_of_file,
+    X = (A,B),
+    assertz(cx(A,B)).
+add_cj(X):-
+        X==end_of_file.
+add_cj(X):-
+    \+ X==end_of_file,
+    X = (A,B),
+    assertz(cj(A,B)).
 
 poli(r).
 poli(v).
