@@ -385,7 +385,7 @@ polis_al_lado(P):-
         poli_en(_,P,_);poli_en(_,_,P).
 
 max_loc(M):-
-        bagof(N,cx(_,N),Ns),
+        findall(N,cx(_,N),Ns),
         max_list(Ns,M).
 
 siguiente_cx([],_,_):-fail.
@@ -466,10 +466,13 @@ poli(m).
 
 /* posiciones de salida de las pes */
 salida_pe(1,3).
+salida_pe(6,21).
 salida_pe(2,27).
 salida_pe(3,65).
 salida_pe(4,84).
-salida_pe(6,21).
+salida_pe(4,147).
+salida_pe(4,149).
+salida_pe(4,158).
 
 /* descripcion del etapa */
 
