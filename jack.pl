@@ -311,7 +311,7 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 /* movimiento azar */
-movimiento(A,G,M):-
+movimiento(A,_,M):-
         M>0,
         M_N is M-1,
         jack_camina(A,B),
@@ -364,12 +364,15 @@ jack_en(P):-
         write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID),!.
         
 lee_poli_en(P):-
-        write("entre(ej '20 21 40 41'. ):"),
-        read(S),
-        tokenize_atom(S,L),
-        foreach(member(C,L),
-                foreach((member(C2,L),\+C=C2,\+(poli_en(P,C,C2);poli_en(P,C2,C)),conectados(C,C2)),
-                        (assertz(poli_en(P,C,C2)),write("poli en:"),write(C),write("/"),write(C2),nl))).
+        write("entre:"),
+        read(A),
+        write("y:"),
+        read(B),
+        assertz(poli_en(P,A,B)),
+        foreach((conectados(X,A),\+poli_enmedio(X,A),conectados(X,A),conectados(X,B)),
+                (write("poli en:"),write(X),write(","),write(A),nl,assertz(poli_en(P,X,A)))),
+        foreach((conectados(X,B),\+poli_enmedio(X,B),conectados(X,A),conectados(X,B)),
+                (write("poli en:"),write(X),write(","),write(B),nl,assertz(poli_en(P,X,B)))).
 
 examina_pista(P,0):-
         retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)).
