@@ -4,7 +4,7 @@
 
 jack :-
         banner,
-        write("Sombras sobre Londres... v.1.1, (C) Jorge de Antonio,"),nl,
+        write("Sombras sobre Londres... v.2.5, (C) Jorge de Antonio, Fernando Noguera y JC,"),nl,
         write("   empieza una nueva partida"),nl,
         init.
 
@@ -169,6 +169,10 @@ avisa_si_en_guarida :-
 avisa_si_en_guarida.
 avisa_si_jack_escapa :-
         jack_en_guarida,noche(N),N=4,write("me escapeeeeeeeeee he ganado!!!!!!, bwaahhahahahaaha"),nl,end.
+avisa_si_jack_escapa:-
+        movimientos_que_quedan(M),M=0,
+        write("He agotado mi limite de movimientos me habeis pilladooooooooo!!!"),nl,end,
+        retractall(jack_libre(yes)),assertz(jack_libre(no)),!.
 avisa_si_jack_escapa.
 
 
@@ -264,7 +268,7 @@ movimiento(A,G,M):-
         jack_en(BB).
 /* encuentra_primero usa linternas_que_quedan asi que hay hacer un poco de junglemumble con el valor :( */
 movimiento(A,G,M):-
-        M>1,
+        M>0,
         linternas_que_quedan(LI),
         LI>0,
         M_N is M-1,
@@ -281,7 +285,7 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 movimiento(A,G,M):-
-        M>1,
+        M>0,
         linternas_que_quedan(LI),
         LI>0,
         M_N is M-1,
@@ -297,7 +301,7 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 movimiento(A,G,M):-
-        M>1,
+        M>0,
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
@@ -308,7 +312,7 @@ movimiento(A,G,M):-
         jack_en(BB).
 /* movimiento azar */
 movimiento(A,G,M):-
-        M>1,
+        M>0,
         M_N is M-1,
         jack_camina(A,B),
         writeln(".... que chungo...."),
