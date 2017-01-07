@@ -306,15 +306,23 @@ movimiento(A,G,M):-
         minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
+/* movimiento azar */
+movimiento(A,G,M):-
+        M>1,
+        M_N is M-1,
+        jack_camina(A,B),
+        writeln(".... que chungo...."),
+        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
+        jack_en(B).
 
 puedo_llegar(A,B,G,M):-
         noche(N),
         (N=4;M<10;polis_cerca(A)),
-        B=G.
+        B=G,!.
 puedo_llegar(_,B,G,M):-
         \+B=G,
         linternas_que_quedan(L),
-        camino(B,G,M,L,[]).
+        camino(B,G,M,L,[]),!.
 
 camino(A,B,M,_,_):-
         M>0,conectados(A,B).
@@ -417,13 +425,15 @@ minim([A-B-C],A-B-C).
 minim([A-B-C|T],A-B-C):-minim(T,D-_-_),(A=<D),!.
 minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 
+/* bucle de 1..num mov. hasta que encuentre el primero con el que puede llegar
+ * a la guarida */
 encuentra_primero(M,A,B,G,H):-
         numlist(1,M,NL),
         encuentra_primero_l(NL,A,B,G,H),!.
 encuentra_primero_l([H|_],A,B,G,H):-
         puedo_llegar(A,B,G,H),!.
 encuentra_primero_l([_|T],A,B,G,HH):-
-        encuentra_primero_l(T,A,B,G,HH). 
+        encuentra_primero_l(T,A,B,G,HH),!. 
 
 /* Configuracion del juego */
 carga_tablero:-
