@@ -232,11 +232,13 @@ movimiento(A):-
         guarida(G), 
         movimiento(A,G,M),!,
         writeln(".... ya me he movido!! bwahahahaha").
+/* solo moverte lejos de los polis si quedan muchos movimientos, sino los polis
+ * te puede ir alejando hasta que ya no puedas volver */
 movimiento(A,G,M):-
         polis_cerca(A),
         carromatos_que_quedan(C),
         C>0,
-        M>2,
+        M>8,
         M_N is M-2,
         findall(X-W-B,
                 (jack_va_en_carromato(A,W,B),
@@ -250,7 +252,7 @@ movimiento(A,G,M):-
         jack_en(WW),
         jack_en(BB).
 movimiento(A,G,M):-
-        M>1,
+        M>8,
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
@@ -260,6 +262,7 @@ movimiento(A,G,M):-
         minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
+/* encuentra_primero usa linternas_que_quedan asi que hay hacer un poco de junglemumble con el valor :( */
 movimiento(A,G,M):-
         M>1,
         linternas_que_quedan(LI),
@@ -298,7 +301,6 @@ movimiento(A,G,M):-
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
-                 \+polis_cerca(B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
         minim(L,_-_-BB),
@@ -324,8 +326,6 @@ camino(A,B,M,LI,VIS):-
 camino(A,B,M,LI,VIS):-
         M>1,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
         append([A],VIS,VIS_N),camino(W,B,M2,LI_N,VIS_N).
-
-/* debug :cuando camino_dbg cambie, replicar anadiendo el Tail*/
 
 jack_camina(A,B):-
         conectados(A,B),
