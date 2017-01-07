@@ -368,11 +368,15 @@ lee_poli_en(P):-
         read(A),
         write("y:"),
         read(B),
-        assertz(poli_en(P,A,B)),
+/* 1.determinar perimetro */
         foreach((conectados(X,A),\+poli_enmedio(X,A),conectados(X,A),conectados(X,B)),
                 (write("poli en:"),write(X),write(","),write(A),nl,assertz(poli_en(P,X,A)))),
         foreach((conectados(X,B),\+poli_enmedio(X,B),conectados(X,A),conectados(X,B)),
-                (write("poli en:"),write(X),write(","),write(B),nl,assertz(poli_en(P,X,B)))).
+                (write("poli en:"),write(X),write(","),write(B),nl,assertz(poli_en(P,X,B)))),
+/* 2.todos con todos */
+        foreach(poli_en(P,C1,_),
+                foreach((poli_en(P,C2,_),\+C1=C2,\+poli_enmedio(C1,C2)),
+                        (write("poli en:"),write(C1),write(","),write(C2),nl,assertz(poli_en(P,C1,C2))))).
 
 examina_pista(P,0):-
         retractall(poli_ha_jugado(P,no)),assertz(poli_ha_jugado(P,yes)).
