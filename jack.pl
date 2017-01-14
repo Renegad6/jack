@@ -37,7 +37,7 @@ mata(N):-
 mata_una :-
         jack_mata_una(C),
         write(" .... Jack mata en.. "),write(C),write(", ... bwahahahaha"),nl,
-        write("Polis, dejad de comer donuts (y mear) y moveos!!!"),nl,
+        write("Polis, moveos!!!"),nl,
         jack_en(C),!.
 
 mata_dos :-
@@ -120,6 +120,8 @@ pista(P):-
         write("donde:"),read(C),
         examina_pista(P,C).
 
+reset(P):-
+        retract(poli_ha_jugado(P,yes)),assertz(poli_ha_jugado(P,no)),!.
 /* Funciones auxiliares .*/
 init :-
         abolish(guarida,1),
@@ -245,7 +247,7 @@ movimiento(A,G,M):-
         M>8,
         M_N is M-2,
         findall(X-W-B,
-                (jack_va_en_carromato(A,W,B),
+                (jack_va_en_carromato(A,W,B),\+B=G,
                  \+polis_al_lado(B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
@@ -274,7 +276,7 @@ movimiento(A,G,M):-
         M_N is M-1,
         retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         findall(X-B-B,
-                (jack_pasa_por_cj(A,B),
+                (jack_pasa_por_cj(A,B),\+B=G,
                  \+polis_al_lado(B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
@@ -291,7 +293,7 @@ movimiento(A,G,M):-
         M_N is M-1,
         retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         findall(X-B-B,
-                (jack_pasa_por_cj(A,B),
+                (jack_pasa_por_cj(A,B),\+B=G,
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
         retract(linternas_que_quedan(LI_N)),assertz(linternas_que_quedan(LI)),
@@ -323,21 +325,19 @@ puedo_llegar(A,B,G,M):-
         noche(N),
         (N=4;M<10;polis_cerca(A)),
         B=G,!.
-puedo_llegar(_,B,G,M):-
+puedo_llegar(A,B,G,M):-
         \+B=G,
         linternas_que_quedan(L),
-        camino(B,G,M,L,[]),!.
+        camino(B,G,M,L,[A]),!.
 
 camino(A,B,M,_,_):-
         M>0,conectados(A,B).
-camino(A,B,M,LI,_):-
-        M>0,LI>0,jack_pasa_por_cj(A,B).
 camino(A,B,M,LI,VIS):-
-        M>1,conectados(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI,VIS_N).
+        M>1,conectados(A,W),\+member(W,VIS),\+ W=B,M2 is (M-1),
+        camino(W,B,M2,LI,[A|VIS]).
 camino(A,B,M,LI,VIS):-
-        M>1,LI>0,jack_pasa_por_cj(A,W),\+member(B,VIS),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
-        append([A],VIS,VIS_N),camino(W,B,M2,LI_N,VIS_N).
+        M>1,LI>0,jack_pasa_por_cj(A,W),\+member(W,VIS),\+ W=B,M2 is (M-1),LI_N is (LI-1),
+        camino(W,B,M2,LI_N,[A|VIS]).
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -368,14 +368,15 @@ lee_poli_en(P):-
         read(A),
         write("y:"),
         read(B),
+        write("poli en:"),write(A),write(","),write(B),nl,assertz(poli_en(P,A,B)),
 /* 1.determinar perimetro */
-        foreach((conectados(X,A),\+poli_enmedio(X,A),conectados(X,A),conectados(X,B)),
+        foreach((conectados(X,A),conectados(X,B),\+poli_en(P,X,A)),
                 (write("poli en:"),write(X),write(","),write(A),nl,assertz(poli_en(P,X,A)))),
-        foreach((conectados(X,B),\+poli_enmedio(X,B),conectados(X,A),conectados(X,B)),
+        foreach((conectados(X,A),conectados(X,B),\+poli_en(P,X,B)),
                 (write("poli en:"),write(X),write(","),write(B),nl,assertz(poli_en(P,X,B)))),
 /* 2.todos con todos */
         foreach(poli_en(P,C1,_),
-                foreach((poli_en(P,C2,_),\+C1=C2,\+poli_enmedio(C1,C2)),
+                foreach((poli_en(P,C2,_),\+C1=C2,\+poli_en(P,C1,C2)),
                         (write("poli en:"),write(C1),write(","),write(C2),nl,assertz(poli_en(P,C1,C2))))).
 
 examina_pista(P,0):-
@@ -439,8 +440,16 @@ minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 /* bucle de 1..num mov. hasta que encuentre el primero con el que puede llegar
  * a la guarida */
 encuentra_primero(M,A,B,G,H):-
+        M<5,
         numlist(1,M,NL),
         encuentra_primero_l(NL,A,B,G,H),!.
+encuentra_primero(M,A,B,G,H):-
+        M>=5,
+        numlist(1,5,NL),
+        encuentra_primero_l(NL,A,B,G,H),!.
+encuentra_primero(M,A,B,G,H):-
+        M>=5,
+        encuentra_primero_l([M],A,B,G,H),!.
 encuentra_primero_l([H|_],A,B,G,H):-
         puedo_llegar(A,B,G,H),!.
 encuentra_primero_l([_|T],A,B,G,HH):-
