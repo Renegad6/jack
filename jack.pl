@@ -4,7 +4,7 @@
 
 jack :-
         banner,
-        write("Sombras sobre Londres... v.2.5, (C) Jorge de Antonio, Fernando Noguera y JC,"),nl,
+        write("Sombras sobre Londres... v.3.0, (C) Jorge de Antonio, Fernando Noguera y JC,"),nl,
         write("   empieza una nueva partida"),nl,
         init.
 
@@ -231,7 +231,6 @@ end:-
         write("                                                                        "),nl.
  
 /* movimiento */
-/* vecindario: dentro del radio distancia de 5 movimientos de la guarida. Motivos de eficiencia */
 
 /* 0. No me puedo mover porque ya llegue */
 movimiento(A):-
@@ -259,10 +258,8 @@ movimiento(A,G,M):-
         jack_en(B).
 
 /* 2. Caminar acercandome a la guarida sin pasar al lado de polis */
-/* 2.1 si estoy en el vecindario, miro todas las alternativas y me quedo con la que me lleva mas cerca */
 movimiento(A,G,M):-
         M>8,
-        vecindario(A,G),
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
@@ -273,94 +270,43 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         writeln(".... (2.1) in da hoood!! bwahahahaha"),
         jack_en(BB).
-/* 2.2 si NO estoy en el vecindario, camino a la primera conexion desde donde pueda llegar con los movimientos que me quedan */
-movimiento(A,G,M):-
-        M>8,
-        \+vecindario(A,G),
-        M_N is M-1,
-        jack_camina(A,B),
-        \+polis_al_lado(B),
-        puedo_llegar(A,B,G,M_N),
-        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        writeln(".... (2.2) walking on sunshine...!! bwahahahaha"),
-        jack_en(B).
 
 /* 3. Pasar por callejon sin pasar cerca de polis */
-/* 3.1 si estoy en el vecindario, miro todas las alternativas y me quedo con la que me lleva mas cerca */
-/* encuentra_primero usa linternas_que_quedan asi que hay hacer un poco de junglemumble con el valor :( */
 movimiento(A,G,M):-
         M>0,
         linternas_que_quedan(LI),
         LI>0,
-        vecindario(A,G),
         M_N is M-1,
-        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         findall(X-B-B,
                 (jack_pasa_por_cj(A,B),\+B=G,
                  \+polis_al_lado(B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-        retract(linternas_que_quedan(LI_N)),assertz(linternas_que_quedan(LI)),
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
         retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
-/* 3.2 si NO estoy en el vecindario, camino a la primera conexion desde donde pueda llegar con los movimientos que me quedan */
-movimiento(A,G,M):-
-        M>0,
-        linternas_que_quedan(LI),
-        LI>0,
-        \+vecindario(A,G),
-        M_N is M-1,
-        jack_pasa_por_cj(A,B),\+B=G,
-        \+polis_al_lado(B),
-        puedo_llegar(A,B,G,M_N),
-        writeln(".... uso una linterna!! bwahahahaha"),
-        LI_N is LI-1,
-        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
-        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
 
 /* 4. Me muevo por un callejon aunque salga al lado de un poli */
-/* 4.1 si estoy en el vecindario, miro todas las alternativas y me quedo con la que me lleva mas cerca */
 movimiento(A,G,M):-
         M>0,
         linternas_que_quedan(LI),
         LI>0,
-        vecindario(A,G),
         M_N is M-1,
-        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         findall(X-B-B,
                 (jack_pasa_por_cj(A,B),\+B=G,
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-        retract(linternas_que_quedan(LI_N)),assertz(linternas_que_quedan(LI)),
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
         retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
-/* 4.2 si NO estoy en el vecindario, callejoneo a la primera conexion desde donde pueda llegar con los movimientos que me quedan */
-movimiento(A,G,M):-
-        M>0,
-        linternas_que_quedan(LI),
-        LI>0,
-        \+vecindario(A,G),
-        M_N is M-1,
-        jack_pasa_por_cj(A,B),\+B=G,
-        puedo_llegar(A,B,G,M_N),
-        writeln(".... uso una linterna!! bwahahahaha"),
-        LI_N is LI-1,
-        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
-        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
 
 /* 5. Camino aunque salga al lado de un poli */
-/* 5.1 si estoy en el vecindario, miro todas las alternativas y me quedo con la que me lleva mas cerca */
 movimiento(A,G,M):-
         M>0,
-        vecindario(A,G),
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
@@ -370,16 +316,6 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         write(".... (5.1) in da hoood:"),writeln(XX),
         jack_en(BB).
-/* 5.2 si NO estoy en el vecindario, camino a la primera conexion desde donde pueda llegar con los movimientos que me quedan(aunque haya polis) */
-movimiento(A,G,M):-
-        M>0,
-        M_N is M-1,
-        \+vecindario(A,G),
-        jack_camina(A,B),
-        puedo_llegar(A,B,G,M_N),!,
-        retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        writeln(".... (2.2) walking on sunshine...!! bwahahahaha"),
-        jack_en(B).
 
 /* movimiento azar */
 movimiento(A,_,M):-
@@ -400,9 +336,8 @@ puedo_llegar(A,B,G,M):-
 
 camino(A,B,M,_):-
         M>0,conectados(A,B),!.
-camino(A,B,M,VIS):-
-        M>1,conectados(A,W),\+member(W,VIS),\+ W=B,M2 is (M-1),
-        camino(W,B,M2,[A|VIS]),!.
+camino(A,B,M,_):-
+        M>0,di(A,B,D),D<=M,!.
 
 jack_camina(A,B):-
         conectados(A,B),
@@ -535,6 +470,15 @@ carga_tablero:-
     X == end_of_file,   % fail (backtrack) if not end of 
     !,
     close(IDT).
+carga_distancias:-
+    writeln('Cargando distancias...'),
+    open('jack_rel.txt',read,IDT,[type(text),buffer(false)]),
+    repeat,             % try again forever
+    read(IDT,X),
+    add_rel(X),
+    X == end_of_file,   % fail (backtrack) if not end of 
+    !,
+    close(IDT)
 carga_callejones:-
     writeln('Cargando callejones...'),
     open('jack_cj.txt',read,IDT,[type(text),buffer(false)]),
@@ -551,6 +495,15 @@ add_cx(X):-
     \+ X==end_of_file,
     X = (A,B),
     assertz(cx(A,B)).
+
+add_rel(X):-
+        X==end_of_file.
+add_rel(X):-
+    \+ X==end_of_file,
+    X = (A,B,D),
+    assertz(di(A,B,D)),
+    assertz(di(B,A,D)).
+
 add_cj(X):-
         X==end_of_file.
 add_cj(X):-
