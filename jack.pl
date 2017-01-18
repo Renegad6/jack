@@ -241,13 +241,10 @@ movimiento(A):-
         writeln(".... ya me he movido!! bwahahahaha").
 
 /* 1. Moverse rapido en carromato */
-/* solo moverte lejos de los polis si quedan muchos movimientos, sino los polis
- * te puede ir alejando hasta que ya no puedas volver */
 movimiento(A,G,M):-
         polis_al_lado(A),
         carromatos_que_quedan(C),
         C>0,
-        M>9,
         M_N is M-2,
         findall(X-W-B,
                 (jack_va_en_carromato(A,W,B),
@@ -326,6 +323,10 @@ movimiento(A,G,M):-
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
+                 encuentra_primero(100,A,B,G,X)),
+                 L),
+        findall(X-B-B,
+                (jack_pasa_por_cj(A,B),
                  encuentra_primero(100,A,B,G,X)),
                  L),
         minim(L,XX-_-BB),
