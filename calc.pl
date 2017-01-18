@@ -1,25 +1,7 @@
 calc:-
     carga_tablero,
-    open('jack_rel.txt',write,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),
-    assertz(distancia(0,0,0)),
-    foreach(cx(A,B),registra(A,B,1)),
-    itera(10,20),
-    itera(20,30),
-    itera(30,40),
-    itera(40,50),
-    itera(50,60),
-    itera(60,70),
-    itera(80,90),
-    itera(90,100),
-    itera(100,110),
-    itera(110,120),
-    itera(120,130),
-    itera(130,140),
-    itera(140,150),
-    itera(150,160),
-    itera(160,170),
-    itera(170,180),
-    itera(180,190),
+    carga_distancias,
+    open('jack_rel.txt',add,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),
     itera(1,195).
 
 itera(A,B):-
@@ -68,4 +50,20 @@ carga_tablero:-
     X == end_of_file,   % fail (backtrack) if not end of 
     !,
     close(IDT).
+carga_distancias:-
+    writeln('Cargando distancias...'),
+    open('jack_rel.txt',read,IDT,[type(text),buffer(false)]),
+    repeat,             % try again forever
+    read(IDT,X),
+    add_rel(X),
+    X == end_of_file,   % fail (backtrack) if not end of 
+    !,
+    close(IDT)
 
+add_rel(X):-
+        X==end_of_file.
+add_rel(X):-
+    \+ X==end_of_file,
+    X = (A,B,D),
+    assertz(distancia(A,B,D)),
+    assertz(distancia(B,A,D)).

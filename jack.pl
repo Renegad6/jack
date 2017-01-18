@@ -507,8 +507,8 @@ add_rel(X):-
 add_rel(X):-
     \+ X==end_of_file,
     X = (A,B,D),
-    assertz(di(A,B,D)),
-    assertz(di(B,A,D)).
+    assertz(distancia(A,B,D)),
+    assertz(distancia(B,A,D)).
 
 add_cj(X):-
         X==end_of_file.
