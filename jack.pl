@@ -247,19 +247,22 @@ movimiento(A,G,M):-
         polis_al_lado(A),
         carromatos_que_quedan(C),
         C>0,
-        M>8,
+        M>9,
         M_N is M-2,
-        jack_va_en_carromato(A,W,B),\+B=G,
-        puedo_llegar(A,B,G,M_N),
+        findall(X-W-B,
+                (jack_va_en_carromato(A,W,B),
+                 encuentra_primero(M_N,A,B,G,X)),
+                 L),
+        minim(L,_-WW-BB),
         writeln(".... uso un carromato!! bwahahahaha"),
         retract(carromatos_que_quedan(C)),C_N is C-1,assertz(carromatos_que_quedan(C_N)),
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(W),
-        jack_en(B).
+        jack_en(WW),
+        jack_en(BB).
 
 /* 2. Caminar acercandome a la guarida sin pasar al lado de polis */
 movimiento(A,G,M):-
-        M>8,
+        M>9,
         M_N is M-1,
         findall(X-B-B,
                 (jack_camina(A,B),
@@ -304,7 +307,7 @@ movimiento(A,G,M):-
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 
-/* 5. Camino aunque salga al lado de un poli */
+/* 5. Camino aunque pase al lado de un poli */
 movimiento(A,G,M):-
         M>0,
         M_N is M-1,
@@ -317,14 +320,18 @@ movimiento(A,G,M):-
         write(".... (5.1) in da hoood:"),writeln(XX),
         jack_en(BB).
 
-/* movimiento azar */
-movimiento(A,_,M):-
+/* movimiento azar acercandome a la guarida */
+movimiento(A,G,M):-
         M>0,
         M_N is M-1,
-        jack_camina(A,B),
-        writeln(".... que chungo...."),
+        findall(X-B-B,
+                (jack_camina(A,B),
+                 encuentra_primero(100,A,B,G,X)),
+                 L),
+        minim(L,XX-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        jack_en(B).
+        writeln(".... que chungo...."),
+        jack_en(BB).
 
 puedo_llegar(A,B,G,M):-
         noche(N),
@@ -332,12 +339,10 @@ puedo_llegar(A,B,G,M):-
         B=G,!.
 puedo_llegar(A,B,G,M):-
         \+B=G,
-        camino(B,G,M,[A]),!.
+        camino(B,G,M),!.
 
-camino(A,B,M,_):-
-        M>0,conectados(A,B),!.
-camino(A,B,M,_):-
-        M>0,di(A,B,D),D<=M,!.
+camino(A,B,M):-
+        M>0,distancia(A,B,D),D=<M,!.
 
 jack_camina(A,B):-
         conectados(A,B),
