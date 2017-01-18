@@ -1,14 +1,17 @@
 calc:-
-    carga_tablero,
-    carga_distancias,
-    open('jack_rel.txt',add,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),
+    init,
+    open('jack_rel.txt',append,ID,[type(text),buffer(false)]),abolish(file_id,1),assertz(file_id(ID)),
     itera(1,195).
+
+init:-
+    carga_tablero,
+    carga_distancias.
 
 itera(A,B):-
     numlist(A,B,NL),
     numlist(A,B,NL2),
     foreach(member(X,NL),
-        foreach((member(Y,NL2),\+X=Y),
+        foreach((member(Y,NL2),\+X=Y,\+distancia(X,Y,_)),
                 (write(X),write("/"),write(Y),nl,calc_d(X,Y,1)))).
 
 calc_d(X,Y,D):-
@@ -31,7 +34,7 @@ registra(X,Y,D):-
         assertz(distancia(X,Y,D)),
         assertz(distancia(Y,X,D)),
         file_id(ID),
-        write(ID,X),write(ID,","),write(ID,Y),write(ID,","),write(ID,D),nl(ID).
+        write(ID,X),write(ID,","),write(ID,Y),write(ID,","),write(ID,D),write(ID,"."),nl(ID).
 registra(_,_,_).
 
 add_cx(X):-
@@ -58,7 +61,7 @@ carga_distancias:-
     add_rel(X),
     X == end_of_file,   % fail (backtrack) if not end of 
     !,
-    close(IDT)
+    close(IDT).
 
 add_rel(X):-
         X==end_of_file.
