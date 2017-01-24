@@ -12,14 +12,14 @@ itera(A,B):-
     numlist(A,B,NL2),
     foreach(member(X,NL),
         foreach((member(Y,NL2),\+X=Y,\+distancia(X,Y,_)),
-                (write(X),write("/"),write(Y),nl,calc_d(X,Y,15)))).
+                (write(X),write("/"),write(Y),nl,calc_d(X,Y,1)))).
 
-calc_d(X,Y,1):-distancia(X,Y,1),!.
 calc_d(X,Y,D):-
-    D>1,
-    camino(X,Y,D,[X]),D2 is D-1,\+camino(X,Y,[X],D2).
+    D=<15,
+    camino(X,Y,D,[]),!.
 calc_d(X,Y,D):-
-    D2 is D-1,calc_d(X,Y,D2).
+    D2 is D+1,
+    calc_d(X,Y,D2). 
 
 camino(A,B,M,_):-
         M>0,distancia(A,B,M),!.
