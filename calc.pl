@@ -16,7 +16,7 @@ itera(A,B):-
 
 calc_d(X,Y,D):-
     D=<15,
-    camino(X,Y,D,[]),!.
+    camino(X,Y,D,[X]),!.
 calc_d(X,Y,D):-
     D2 is D+1,
     calc_d(X,Y,D2). 

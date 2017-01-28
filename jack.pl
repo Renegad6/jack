@@ -284,7 +284,7 @@ movimiento(A,G,M):-
                  L),
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
-        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
+        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 
@@ -300,7 +300,7 @@ movimiento(A,G,M):-
                  L),
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
-        retract(linternas_que_quedan(LI)),assertz(linternas_que_quedan(LI_N)),
+        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
         retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 
@@ -318,21 +318,36 @@ movimiento(A,G,M):-
         jack_en(BB).
 
 /* movimiento azar acercandome a la guarida */
+/* por callejon */
 movimiento(A,G,M):-
         M>0,
+        linternas_que_quedan(LI),
+        LI>0,
         M_N is M-1,
+        writeln(".... que chungo...."),
+        findall(X-B-B,
+                (jack_pasa_por_cj(A,B),\+B=G,
+                 encuentra_primero(100,A,B,G,X)),
+                 L),
+        minim(L,_-_-BB),
+        writeln(".... uso una linterna!! bwahahahaha"),
+        retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
+        retract(movimientos_que_quedan(M)),assertz(movimientos_que_quedan(M_N)),
+        jack_en(BB).
+movimiento(A,G,M):-
+/*andando*/
+        M>0,
+        M_N is M-1,
+        writeln(".... que chungo...."),
         findall(X-B-B,
                 (jack_camina(A,B),
                  encuentra_primero(100,A,B,G,X)),
                  L),
-        findall(X-B-B,
-                (jack_pasa_por_cj(A,B),
-                 encuentra_primero(100,A,B,G,X)),
-                 L),
         minim(L,XX-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
-        writeln(".... que chungo...."),
         jack_en(BB).
+
+/* fin movimiento */
 
 puedo_llegar(A,B,G,M):-
         noche(N),
