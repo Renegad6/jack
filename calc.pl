@@ -36,6 +36,7 @@ calc_d(X,Y,D):-
 
 calc_dd(X,Y,D):-
     D=<15,
+    \+(dist_seguro_mayor(X,Y,DD),DD>=D),
     camino(X,Y,D,[X]),!.
 calc_dd(X,Y,D):-
     D2 is D+1,
@@ -46,6 +47,9 @@ camino(A,B,M,_):-
 camino(A,B,M,VIS):-
         M>1,conectados(A,W),\+member(W,VIS),\+ W=B,M2 is (M-1),
         camino(W,B,M2,[A|VIS]),registra(A,B,M).
+camino(A,B,M,_):-
+        assert(dist_seguro_mayor(A,B,M)),
+        assert(dist_seguro_mayor(B,A,M)),fail.
 
 conectados(A,B):-
         (cx(A,B);cx(B,A)).
@@ -89,4 +93,7 @@ add_rel(X):-
     \+ X==end_of_file,
     X = (A,B,D),
     assertz(distancia(A,B,D)),
-    assertz(distancia(B,A,D)).
+    assertz(distancia(B,A,D)),
+    D2 is D-1,
+    assertz(dist_seguro_mayor(A,B,D2)),
+    assertz(dist_seguro_mayor(B,A,D2)).
