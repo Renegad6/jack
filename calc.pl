@@ -10,16 +10,36 @@ init:-
 itera(A,B):-
     numlist(A,B,NL),
     numlist(A,B,NL2),
+    assert(idthA(0)),
+    assert(idthB(0)),
     foreach(member(X,NL),
         foreach((member(Y,NL2),\+X=Y,\+distancia(X,Y,_)),
                 (write(X),write("/"),write(Y),nl,calc_d(X,Y,1)))).
 
 calc_d(X,Y,D):-
+        idthA(0),
+        thread_create(calc_dd(X,Y,D),ID,[]),
+        retract(idthA(0)),assert(idthA(ID)).
+calc_d(X,Y,D):-
+        idthB(0),
+        thread_create(calc_dd(X,Y,D),ID,[]),
+        retract(idthB(0)),assert(idthB(ID)).
+calc_d(X,Y,D):-
+        idthA(IDA),
+        idthB(IDB),
+        thread_join(IDA,_),
+        retract(idthA(IDA)),assert(idthA(0)),
+        calc_d(X,Y,D),
+        thread_join(IDB,_),
+        retract(idthB(IDB)),assert(idthB(0)),
+        calc_d(X,Y,D).
+
+calc_dd(X,Y,D):-
     D=<15,
     camino(X,Y,D,[X]),!.
-calc_d(X,Y,D):-
+calc_dd(X,Y,D):-
     D2 is D+1,
-    calc_d(X,Y,D2). 
+    calc_dd(X,Y,D2). 
 
 camino(A,B,M,_):-
         M>0,distancia(A,B,M),!.
