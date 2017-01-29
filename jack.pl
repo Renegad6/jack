@@ -462,6 +462,9 @@ minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 
 /* bucle de 1..num mov. hasta que encuentre el primero con el que puede llegar
  * a la guarida */
+encuentra_primero(M,A,B,G,0):-
+        B=G,
+        puedo_llegar(A,B,G,M),!.
 encuentra_primero(M,A,B,G,H):-
         M<5,
         numlist(1,M,NL),
