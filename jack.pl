@@ -135,6 +135,7 @@ init :-
         assertz(noche(0)),
         carga_tablero,
         carga_callejones,
+        carga_distancias,
         elige_guarida.
 
 puede_ser_guarida(G):-
@@ -343,7 +344,7 @@ movimiento(A,G,M):-
                 (jack_camina(A,B),
                  encuentra_primero(100,A,B,G,X)),
                  L),
-        minim(L,XX-_-BB),
+        minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
 
@@ -353,7 +354,7 @@ puedo_llegar(A,B,G,M):-
         noche(N),
         (N=4;M<10;polis_cerca(A)),
         B=G,!.
-puedo_llegar(A,B,G,M):-
+puedo_llegar(_,B,G,M):-
         \+B=G,
         camino(B,G,M),!.
 
@@ -380,7 +381,7 @@ poli_enmedio(A,B):-
 
 jack_en(P):-
         assertz(jack_ha_estado(P)),
-        retractall(posicion_jack(_)),assertz(posicion_jack(P)),
+        retract(posicion_jack(_)),assertz(posicion_jack(P)),
         file_id(ID),
         movimientos_que_quedan(M),linternas_que_quedan(L),carromatos_que_quedan(C),
         write(ID,"paso por:"),write(ID,P),write(ID," mov:"),write(ID,M),write(ID," lin:"),write(ID,L),write(ID," carr:"),write(ID,C),nl(ID),!.
@@ -477,10 +478,6 @@ encuentra_primero_l([H|_],A,B,G,H):-
 encuentra_primero_l([_|T],A,B,G,HH):-
         encuentra_primero_l(T,A,B,G,HH),!. 
 
-vecindario(A,B):-
-        puedo_llegar(A,A,B,5),
-        writeln(".... in da hoood!! bwahahahaha"),!.
-
 /* Configuracion del juego */
 carga_tablero:-
     writeln('Cargando tablero...'),
@@ -499,7 +496,7 @@ carga_distancias:-
     add_rel(X),
     X == end_of_file,   % fail (backtrack) if not end of 
     !,
-    close(IDT)
+    close(IDT).
 carga_callejones:-
     writeln('Cargando callejones...'),
     open('jack_cj.txt',read,IDT,[type(text),buffer(false)]),
