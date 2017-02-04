@@ -359,6 +359,8 @@ puedo_llegar(_,B,G,M):-
         \+B=G,
         camino(B,G,M),!.
 
+camino(A,B,1):-
+        conectados(A,B),!.
 camino(A,B,M):-
         M>0,distancia(A,B,D),D=<M,!.
 
