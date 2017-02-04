@@ -139,7 +139,9 @@ init :-
         elige_guarida.
 
 puede_ser_guarida(G):-
-        \+salida_pe(_,G).
+        \+salida_pe(_,G),
+        cj(_,B),
+        G<B,!.
 
 jack_mata_una(H) :-
         findall(CC,
@@ -429,10 +431,6 @@ polis_al_lado(P):-
 max_loc(M):-
         findall(N,cx(_,N),Ns),
         max_list(Ns,M).
-
-siguiente_cx([],_,_):-fail.
-siguiente_cx([H|T],H,T).
-
 
 polis_inicio:- abolish(poli_en,3),abolish(poli_ha_jugado,2),
                forall(poli(X),(assertz(poli_en(X,0,0)),assertz(poli_ha_jugado(X,no)))).
