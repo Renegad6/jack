@@ -46,7 +46,7 @@ mata_dos :-
         jack_mata_una(CC),
         \+C=CC,
         write(" .... Jack mata en.. "),write(C),write(", y "),write(CC),write(", ... bwahahahaha"),nl,
-        write("Polis, dejad de comer donuts (y mear) y moveos!!!"),nl,
+        write("Polis, dejad de comer donuts y moveos!!!"),nl,
         elige_donde_jack(C,CC,CR),
         jack_en(CR),!.
 
