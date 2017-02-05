@@ -253,7 +253,7 @@ movimiento(A,G,M):-
                 (jack_va_en_carromato(A,W,B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-writeln(L),
+/*writeln(L),*/
         minim(L,_-WW-BB),
         writeln(".... uso un carromato!! bwahahahaha"),
         retract(carromatos_que_quedan(C)),C_N is C-1,assertz(carromatos_que_quedan(C_N)),
@@ -270,7 +270,7 @@ movimiento(A,G,M):-
                  \+polis_al_lado(B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-writeln(L),
+/*writeln(L),*/
         minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
@@ -302,7 +302,7 @@ movimiento(A,G,M):-
                 (jack_pasa_por_cj(A,B),\+B=G,
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-writeln(L),
+/*writeln(L),*/
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
         retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
@@ -317,7 +317,7 @@ movimiento(A,G,M):-
                 (jack_camina(A,B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
-writeln(L),
+/*writeln(L),*/
         minim(L,_-_-BB),
         retract(movimientos_que_quedan(_)),assertz(movimientos_que_quedan(M_N)),
         jack_en(BB).
