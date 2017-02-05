@@ -357,7 +357,7 @@ movimiento(A,G,M):-
 /* M - Movimientos que quedan, MX: LLegar en maximo de movs */
 puedo_llegar(A,G,G,M,_):-
         noche(N),
-        (N=4;M=<10,polis_cerca(A)),!.
+        (N=4;M=<10;polis_cerca(A)),!.
 puedo_llegar(_,B,G,_,MX):-
         \+B=G,
         camino(B,G,MX),!.
@@ -466,8 +466,10 @@ minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 
 /* bucle de 1..num mov. hasta que encuentre el primero con el que puede llegar
  * a la guarida */
-encuentra_primero(M,A,G,G,0):-
-        puedo_llegar(A,G,G,M,1),!.
+encuentra_primero(M,A,B,G,H):-
+        B=G,
+        puedo_llegar(A,B,G,M,1),
+        H is 0,!.
 encuentra_primero(M,A,B,G,H):-
         numlist(1,M,NL),
         encuentra_primero_l(NL,A,B,G,M,H),!.
