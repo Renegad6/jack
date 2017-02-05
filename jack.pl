@@ -253,6 +253,7 @@ movimiento(A,G,M):-
                 (jack_va_en_carromato(A,W,B),
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
+writeln(L),
         minim(L,_-WW-BB),
         writeln(".... uso un carromato!! bwahahahaha"),
         retract(carromatos_que_quedan(C)),C_N is C-1,assertz(carromatos_que_quedan(C_N)),
@@ -301,6 +302,7 @@ movimiento(A,G,M):-
                 (jack_pasa_por_cj(A,B),\+B=G,
                  encuentra_primero(M_N,A,B,G,X)),
                  L),
+writeln(L),
         minim(L,_-_-BB),
         writeln(".... uso una linterna!! bwahahahaha"),
         retract(linternas_que_quedan(LI)),LI_N is LI-1,assertz(linternas_que_quedan(LI_N)),
@@ -352,12 +354,13 @@ movimiento(A,G,M):-
 
 /* fin movimiento */
 
-puedo_llegar(A,G,G,M):-
+/* M - Movimientos que quedan, MX: LLegar en maximo de movs */
+puedo_llegar(A,G,G,M,_):-
         noche(N),
-        (N=4;M<10;polis_cerca(A)),!.
-puedo_llegar(_,B,G,M):-
+        (N=4;M=<10,polis_cerca(A)),!.
+puedo_llegar(_,B,G,_,MX):-
         \+B=G,
-        camino(B,G,M),!.
+        camino(B,G,MX),!.
 
 camino(A,B,1):-
         conectados(A,B),!.
@@ -370,9 +373,11 @@ jack_camina(A,B):-
 jack_pasa_por_cj(A,B):-
         hay_callejon(A,B).
 jack_va_en_carromato(A,B,C):-
+        conectados(A,B),
+        conectados(B,C),
+        \+poli_enmedio(A,B),
+        \+poli_enmedio(B,C),
         \+A=C,
-        conectados(A,B),\+poli_enmedio(A,B),
-        conectados(B,C),\+poli_enmedio(B,C),
         \+jack_camina(A,C).
 
 conectados(A,B):-
@@ -428,7 +433,7 @@ polis_cerca(P):-
         polis_al_lado(A),!.
 
 polis_al_lado(P):-
-        poli_en(_,P,_);poli_en(_,_,P).
+        poli_en(_,P,_);poli_en(_,_,P),!.
 
 max_loc(M):-
         findall(N,cx(_,N),Ns),
@@ -462,22 +467,15 @@ minim([A-_-_|T],D-E-F):-minim(T,D-E-F),(D=<A),!.
 /* bucle de 1..num mov. hasta que encuentre el primero con el que puede llegar
  * a la guarida */
 encuentra_primero(M,A,G,G,0):-
-        puedo_llegar(A,G,G,M),!.
+        puedo_llegar(A,G,G,M,1),!.
 encuentra_primero(M,A,B,G,H):-
-        M<5,
         numlist(1,M,NL),
-        encuentra_primero_l(NL,A,B,G,H),!.
-encuentra_primero(M,A,B,G,H):-
-        M>=5,
-        numlist(1,5,NL),
-        encuentra_primero_l(NL,A,B,G,H),!.
-encuentra_primero(M,A,B,G,H):-
-        M>=5,
-        encuentra_primero_l([M],A,B,G,H),!.
-encuentra_primero_l([H|_],A,B,G,H):-
-        puedo_llegar(A,B,G,H),!.
-encuentra_primero_l([_|T],A,B,G,HH):-
-        encuentra_primero_l(T,A,B,G,HH),!. 
+        encuentra_primero_l(NL,A,B,G,M,H),!.
+
+encuentra_primero_l([H|_],A,B,G,M,H):-
+        puedo_llegar(A,B,G,M,H),!.
+encuentra_primero_l([_|T],A,B,G,M,HH):-
+        encuentra_primero_l(T,A,B,G,M,HH),!. 
 
 /* Configuracion del juego */
 carga_tablero:-
