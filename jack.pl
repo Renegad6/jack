@@ -369,16 +369,17 @@ camino(A,B,M):-
 
 jack_camina(A,B):-
         conectados(A,B),
-        \+poli_enmedio(A,B).
+        \+poli_enmedio(A,B),!.
 jack_pasa_por_cj(A,B):-
         hay_callejon(A,B).
+        \+jack_camina(A,B).
 jack_va_en_carromato(A,B,C):-
         conectados(A,B),
         conectados(B,C),
+        \+conectados(A,C),
         \+poli_enmedio(A,B),
         \+poli_enmedio(B,C),
-        \+A=C,
-        \+jack_camina(A,C).
+        \+A=C.
 
 conectados(A,B):-
         (cx(A,B);cx(B,A)).
